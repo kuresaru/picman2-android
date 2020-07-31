@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="top.scraft.picman2">
 
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
             android:allowBackup="true"
@@ -12,12 +12,16 @@
             android:supportsRtl="true"
             android:theme="@style/AppTheme">
         <activity
-                android:name=".BrowserActivity"
+                android:name=".activity.SettingsActivity"
+                android:label="@string/title_activity_server_settings">
+        </activity>
+        <activity
+                android:name=".activity.BrowserActivity"
                 android:configChanges="orientation|keyboardHidden|screenSize"
                 android:label="@string/title_activity_browser"
-                android:theme="@style/Theme.AppCompat.Light">
+                android:theme="@style/AppTheme">
         </activity>
-        <activity android:name=".MainActivity">
+        <activity android:name=".activity.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 

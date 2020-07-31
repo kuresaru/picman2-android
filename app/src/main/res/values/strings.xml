@@ -1,5 +1,20 @@
 <resources>
+    <!-- App Name -->
     <string name="app_name">暮光小猿图片管理器2</string>
 
+    <!-- Activity Titles -->
     <string name="title_activity_browser">BrowserActivity</string>
+    <string name="title_activity_server_settings">设置</string>
+
+    <!-- Menu Options -->
+    <string name="menu_main_login">登录</string>
+    <string name="menu_main_settings">设置</string>
+    <string name="menu_main_ping">测试与服务器的连接</string>
+
+    <!-- Preference Titles -->
+    <string name="settings_base">基本设置</string>
+
+    <!-- Messages Preferences -->
+    <string name="settings_base_server">服务器地址</string>
+
 </resources>

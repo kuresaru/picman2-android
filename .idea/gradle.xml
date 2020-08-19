@@ -8,8 +8,8 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
-            <option value="/media/kuresaru/暮光小猿wzt_移动/projects/picman2-android" />
-            <option value="/media/kuresaru/暮光小猿wzt_移动/projects/picman2-android/app" />
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/app" />
           </set>
         </option>
       </GradleProjectSettings>

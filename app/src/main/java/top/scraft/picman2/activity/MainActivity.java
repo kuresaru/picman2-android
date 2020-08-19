@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,20 +17,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public static final int ACTIVITY_RESULT_LOGIN = 100;
 
-//    private SharedPreferences sharedPreferences;
-    private Button button;
-    private ServerController serverController;
+    private MenuItem piclibMenuItem;
+    private MenuItem systemMenuItem;
     private MenuItem loginMenuItem;
+    private MenuItem logoutMenuItem;
+
+    private ServerController serverController;
     private String sacLoginUrl = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-//        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        serverController = new ServerController(this);
-        button = findViewById(R.id.button);
-        button.setOnClickListener(this);
         checkLogin();
     }
 

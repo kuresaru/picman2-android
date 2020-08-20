@@ -3,15 +3,19 @@ package top.scraft.picman2.activity;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.material.textfield.TextInputEditText;
 import top.scraft.picman2.R;
 import top.scraft.picman2.ServerController;
 import top.scraft.picman2.data.UserDetail;
+import top.scraft.picman2.storage.DatabaseController;
+import top.scraft.picman2.storage.PictureStorageController;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -22,14 +26,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private MenuItem loginMenuItem;
     private MenuItem logoutMenuItem;
 
+    private TextInputEditText inputSearch;
+
     private ServerController serverController;
+    private DatabaseController databaseController;
+    private PictureStorageController pictureStorage;
     private String sacLoginUrl = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        this.serverController = new ServerController(this);
+        // find views
+        inputSearch = findViewById(R.id.inputSearch);
+        findViewById(R.id.buttonSearch).setOnClickListener(this);
+        // get controllers
+        serverController = ServerController.getInstance(getApplicationContext());
+        databaseController = DatabaseController.getInstance(getApplicationContext());
+        pictureStorage = PictureStorageController.getInstance(getApplicationContext());
+        // init
         checkLogin();
     }
 
@@ -62,6 +77,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
+        if (v.getId() == R.id.buttonSearch) {
+            Editable searchText = inputSearch.getText();
+            if (searchText != null) {
+                String keyword = searchText.toString();
+                if (keyword.isEmpty()) {
+                    Toast.makeText(this, "搜索关键字不能为空", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, keyword, Toast.LENGTH_SHORT).show(); // test
+                }
+            }
+        }
     }
 
     @Override

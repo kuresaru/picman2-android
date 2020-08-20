@@ -12,3 +12,4 @@
 /captures
 .externalNativeBuild
 .cxx
+/app/src/main/java/top/scraft/picman2/storage/dao/gen/

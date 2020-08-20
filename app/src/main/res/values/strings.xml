@@ -19,5 +19,7 @@
 
     <!-- Messages Preferences -->
     <string name="settings_base_server">服务器地址</string>
+    <string name="button_search">搜索</string>
+    <string name="edit_search_hint">输入搜索关键字</string>
 
 </resources>

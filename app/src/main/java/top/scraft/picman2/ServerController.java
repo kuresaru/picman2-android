@@ -16,6 +16,8 @@ import java.util.regex.Pattern;
 
 public class ServerController {
 
+    private static ServerController instance = null;
+
     private final Gson gson = new Gson();
     private final String userAgent = "Picman2 Android";
     private OkHttpClient httpClient;
@@ -23,7 +25,14 @@ public class ServerController {
     private String jsessionid = "";
     private String sact;
 
-    public ServerController(Context context) {
+    public static ServerController getInstance(Context appContext) {
+        if (instance == null) {
+            instance = new ServerController(appContext);
+        }
+        return instance;
+    }
+
+    private ServerController(Context context) {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         httpClient = new OkHttpClient.Builder()
                 .connectTimeout(8, TimeUnit.SECONDS)
@@ -145,7 +154,8 @@ public class ServerController {
     }
 
     public void logout() {
-        request("/api/sac_logout", (code, body, e) -> {});
+        request("/api/sac_logout", (code, body, e) -> {
+        });
     }
 
     public UserDetail getUserDetail() {

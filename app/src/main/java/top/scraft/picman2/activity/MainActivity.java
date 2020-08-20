@@ -29,12 +29,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        this.serverController = new ServerController(this);
         checkLogin();
     }
 
     private void checkLogin() {
         if (loginMenuItem != null) {
+            piclibMenuItem.setVisible(false);
+            systemMenuItem.setVisible(false);
             loginMenuItem.setVisible(false);
+            logoutMenuItem.setVisible(false);
         }
         new Thread(() -> {
             UserDetail userDetail = serverController.getUserDetail();
@@ -47,7 +51,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         Toast.makeText(this, "Not login", Toast.LENGTH_SHORT).show();
                         sacLoginUrl = userDetail.getSacLoginUrl();
                     }
+                    piclibMenuItem.setVisible(userDetail.isLoggedIn());
+                    systemMenuItem.setVisible(userDetail.isAdmin());
                     loginMenuItem.setVisible((!userDetail.isLoggedIn()) && (sacLoginUrl != null));
+                    logoutMenuItem.setVisible(userDetail.isLoggedIn());
                 });
             }
         }).start();
@@ -76,8 +83,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        piclibMenuItem = menu.findItem(R.id.menu_main_piclib);
+        systemMenuItem = menu.findItem(R.id.menu_main_system);
         loginMenuItem = menu.findItem(R.id.menu_main_login);
+        logoutMenuItem = menu.findItem(R.id.menu_main_logout);
+        piclibMenuItem.setVisible(false);
+        systemMenuItem.setVisible(false);
         loginMenuItem.setVisible(false);
+        logoutMenuItem.setVisible(false);
         return true;
     }
 
@@ -89,6 +102,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 intent.putExtra("URL", sacLoginUrl);
                 intent.putExtra("TITLE", "登录");
                 startActivityForResult(intent, ACTIVITY_RESULT_LOGIN);
+                break;
+            }
+            case R.id.menu_main_logout: {
+                new Thread(() -> {
+                    serverController.logout();
+                    runOnUiThread(this::checkLogin);
+                }).start();
                 break;
             }
             case R.id.menu_main_settings: {

@@ -3,16 +3,12 @@ package top.scraft.picman2;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import com.google.gson.Gson;
-import lombok.SneakyThrows;
 import okhttp3.*;
 import top.scraft.picman2.data.UserDetail;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -148,17 +144,17 @@ public class ServerController {
         return false;
     }
 
-    @SneakyThrows(InterruptedException.class)
+    public void logout() {
+        request("/api/sac_logout", (code, body, e) -> {});
+    }
+
     public UserDetail getUserDetail() {
-        CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<UserDetail> result = new AtomicReference<>(null);
         request("/api/user/detail", (code, body, e) -> {
             if (body != null) {
                 result.set(gson.fromJson(body.charStream(), UserDetail.class));
             }
-            latch.countDown();
         });
-        latch.await();
         return result.get();
     }
 

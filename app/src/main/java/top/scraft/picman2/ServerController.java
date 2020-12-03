@@ -3,8 +3,10 @@ package top.scraft.picman2;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import com.google.gson.Gson;
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 import okhttp3.*;
+import top.scraft.picman2.data.PicLibDetail;
 import top.scraft.picman2.data.UserDetail;
 
 import java.io.IOException;
@@ -161,8 +163,22 @@ public class ServerController {
     public UserDetail getUserDetail() {
         AtomicReference<UserDetail> result = new AtomicReference<>(null);
         request("/api/user/detail", (code, body, e) -> {
-            if (body != null) {
+            if (body != null && (code == 200 || code == 401)) {
                 result.set(gson.fromJson(body.charStream(), UserDetail.class));
+            }
+        });
+        return result.get();
+    }
+
+    public List<PicLibDetail> getPicLibs() {
+        AtomicReference<List<PicLibDetail>> result = new AtomicReference<>(null);
+        request("/api/piclib/get_all", (code, body, e) -> {
+            if (code == 200 && body != null) {
+                JsonObject root = JsonParser.parseReader(body.charStream()).getAsJsonObject();
+                if (root.get("success").getAsBoolean()) {
+                    JsonArray libs = root.get("libs").getAsJsonArray();
+                    result.set(gson.fromJson(libs, new TypeToken<List<PicLibDetail>>(){}.getType()));
+                }
             }
         });
         return result.get();

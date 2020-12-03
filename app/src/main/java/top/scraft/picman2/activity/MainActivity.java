@@ -1,27 +1,33 @@
 package top.scraft.picman2.activity;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.Editable;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import com.google.android.material.textfield.TextInputEditText;
 import top.scraft.picman2.R;
 import top.scraft.picman2.ServerController;
+import top.scraft.picman2.activity.adapter.SearchAdapter;
 import top.scraft.picman2.data.UserDetail;
-import top.scraft.picman2.storage.DatabaseController;
-import top.scraft.picman2.storage.PictureStorageController;
+import top.scraft.picman2.storage.PicmanStorage;
+
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     public static final int ACTIVITY_RESULT_LOGIN = 100;
+    private final SearchAdapter searchAdapter = new SearchAdapter();
 
-    private MenuItem piclibMenuItem;
     private MenuItem systemMenuItem;
     private MenuItem loginMenuItem;
     private MenuItem logoutMenuItem;
@@ -29,8 +35,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextInputEditText inputSearch;
 
     private ServerController serverController;
-    private DatabaseController databaseController;
-    private PictureStorageController pictureStorage;
+    private PicmanStorage picmanStorage;
     private String sacLoginUrl = null;
 
     @Override
@@ -40,17 +45,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // find views
         inputSearch = findViewById(R.id.inputSearch);
         findViewById(R.id.buttonSearch).setOnClickListener(this);
+//        RecyclerView recyclerView = findViewById(R.id.main_gallery);
         // get controllers
         serverController = ServerController.getInstance(getApplicationContext());
-        databaseController = DatabaseController.getInstance(getApplicationContext());
-        pictureStorage = PictureStorageController.getInstance(getApplicationContext());
+        picmanStorage = PicmanStorage.getInstance(getApplicationContext());
         // init
+//        recyclerView.setAdapter(searchAdapter);
+        requestPermissions();
         checkLogin();
     }
 
     private void checkLogin() {
         if (loginMenuItem != null) {
-            piclibMenuItem.setVisible(false);
             systemMenuItem.setVisible(false);
             loginMenuItem.setVisible(false);
             logoutMenuItem.setVisible(false);
@@ -66,7 +72,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         Toast.makeText(this, "Not login", Toast.LENGTH_SHORT).show();
                         sacLoginUrl = userDetail.getSacLoginUrl();
                     }
-                    piclibMenuItem.setVisible(userDetail.isLoggedIn());
                     systemMenuItem.setVisible(userDetail.isAdmin());
                     loginMenuItem.setVisible((!userDetail.isLoggedIn()) && (sacLoginUrl != null));
                     logoutMenuItem.setVisible(userDetail.isLoggedIn());
@@ -109,11 +114,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
-        piclibMenuItem = menu.findItem(R.id.menu_main_piclib);
         systemMenuItem = menu.findItem(R.id.menu_main_system);
         loginMenuItem = menu.findItem(R.id.menu_main_login);
         logoutMenuItem = menu.findItem(R.id.menu_main_logout);
-        piclibMenuItem.setVisible(false);
         systemMenuItem.setVisible(false);
         loginMenuItem.setVisible(false);
         logoutMenuItem.setVisible(false);
@@ -124,10 +127,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_main_login: {
-                Intent intent = new Intent(this, BrowserActivity.class);
-                intent.putExtra("URL", sacLoginUrl);
-                intent.putExtra("TITLE", "登录");
-                startActivityForResult(intent, ACTIVITY_RESULT_LOGIN);
+                if ("testuser".equals(sacLoginUrl)) {
+                    Toast.makeText(this, "testuser", Toast.LENGTH_SHORT).show();
+                    serverController.setSact("0123456789abcdef0123456789abcdef");
+                    checkLogin();
+                } else {
+                    Intent intent = new Intent(this, BrowserActivity.class);
+                    intent.putExtra("URL", sacLoginUrl);
+                    intent.putExtra("TITLE", "登录");
+                    startActivityForResult(intent, ACTIVITY_RESULT_LOGIN);
+                }
                 break;
             }
             case R.id.menu_main_logout: {
@@ -144,6 +153,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.menu_main_ping:
                 menuPing();
                 break;
+            case R.id.menu_main_sync:
+                menuSync();
+                break;
+            case R.id.menu_main_piclib:
+                startActivity(new Intent(this, PicLibManagerActivity.class));
+                break;
         }
         return false;
     }
@@ -156,6 +171,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             runOnUiThread(() -> Toast.makeText(MainActivity.this,
                     text, Toast.LENGTH_SHORT).show());
         }).start();
+    }
+
+    private void menuSync() {
+        new Thread(() -> serverController.getPicLibs()).start();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == 100 && grantResults.length == 2) {
+            if (!Arrays.stream(grantResults).allMatch(value -> value == PackageManager.PERMISSION_GRANTED)) {
+                Toast.makeText(this, "未授权存储读写权限,无法使用", Toast.LENGTH_LONG).show();
+                finish();
+            }
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    private void requestPermissions() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission_group.STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            String[] perms = {
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+            };
+            ActivityCompat.requestPermissions(this, perms, 100);
+        }
     }
 
 }

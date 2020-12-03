@@ -12,18 +12,9 @@ public class PictureStorageController {
     private static final String STORAGE_DIRECTORY_PICTURE_NAME = "Pictures";
     private static final String STORAGE_DIRECTORY_TEMP_NAME = "Temp";
 
-    private static PictureStorageController instance = null;
-
     private final Context context;
 
-    public static PictureStorageController getInstance(Context appContext) {
-        if (instance == null) {
-            instance = new PictureStorageController(appContext);
-        }
-        return instance;
-    }
-
-    private PictureStorageController(Context context) {
+    PictureStorageController(Context context) {
         this.context = context;
     }
 

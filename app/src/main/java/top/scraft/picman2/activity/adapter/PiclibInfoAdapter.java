@@ -6,10 +6,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
-import top.scraft.picman2.R;
-import top.scraft.picman2.storage.dao.PictureLibrary;
 
 import java.util.ArrayList;
+
+import top.scraft.picman2.R;
+import top.scraft.picman2.storage.PicmanStorage;
+import top.scraft.picman2.storage.dao.PictureLibrary;
+import top.scraft.picman2.storage.dao.gen.PiclibPictureMapDao;
 
 public class PiclibInfoAdapter extends BaseAdapter {
 
@@ -23,7 +26,9 @@ public class PiclibInfoAdapter extends BaseAdapter {
         content.add("ID=" + (library.getOffline() ? "N/A" : library.getLid()));
         content.add("图库名=" + library.getName());
         content.add("所有者=" + (library.getOffline() ? "N/A" : library.getOwner()));
-        content.add("图片数=" + 0);
+        long pictureCount = PicmanStorage.getInstance(context).getPiclibPictureMapDao().queryBuilder()
+                .where(PiclibPictureMapDao.Properties.AppInternalLid.eq(library.getAppInternalLid())).count();
+        content.add("图片数=" + pictureCount);
     }
 
     @Override

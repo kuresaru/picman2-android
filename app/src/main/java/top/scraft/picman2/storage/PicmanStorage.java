@@ -6,6 +6,7 @@ import lombok.Getter;
 import top.scraft.picman2.storage.dao.StorageOpenHelper;
 import top.scraft.picman2.storage.dao.gen.DaoMaster;
 import top.scraft.picman2.storage.dao.gen.DaoSession;
+import top.scraft.picman2.storage.dao.gen.PiclibPictureMapDao;
 import top.scraft.picman2.storage.dao.gen.PictureDao;
 import top.scraft.picman2.storage.dao.gen.PictureLibraryDao;
 
@@ -25,6 +26,8 @@ public class PicmanStorage {
     private final PictureLibraryDao pictureLibraryDao;
     @Getter
     private final PictureDao pictureDao;
+    @Getter
+    private final PiclibPictureMapDao piclibPictureMapDao;
 
     private PicmanStorage(Context appContext) {
         // simple storage
@@ -36,6 +39,7 @@ public class PicmanStorage {
         daoSession = daoMaster.newSession();
         pictureLibraryDao = daoSession.getPictureLibraryDao();
         pictureDao = daoSession.getPictureDao();
+        piclibPictureMapDao = daoSession.getPiclibPictureMapDao();
     }
 
     public static PicmanStorage getInstance(Context appContext) {

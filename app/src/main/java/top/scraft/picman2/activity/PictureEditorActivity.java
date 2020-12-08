@@ -25,6 +25,7 @@ import com.google.android.material.textfield.TextInputLayout;
 import top.scraft.picman2.R;
 import top.scraft.picman2.activity.adapter.PiclibSpinnerAdapter;
 import top.scraft.picman2.storage.PicmanStorage;
+import top.scraft.picman2.storage.dao.PiclibPictureMap;
 import top.scraft.picman2.storage.dao.Picture;
 import top.scraft.picman2.storage.dao.PictureLibrary;
 import top.scraft.picman2.storage.dao.gen.PictureDao;
@@ -144,8 +145,10 @@ public class PictureEditorActivity extends AppCompatActivity {
                 }
             }
             if (!piclibExists) {
-                oldRecord.getLibraries().add(library);
-                oldRecord.update(); // TODO 好像没加进去
+                PiclibPictureMap ppMap = new PiclibPictureMap();
+                ppMap.setAppInternalLid(library.getAppInternalLid());
+                ppMap.setAppInternalPid(oldRecord.getAppInternalPid());
+                picmanStorage.getPiclibPictureMapDao().insert(ppMap);
             }
             if (newPicture) {
                 if (picmanStorage.getPictureStorage().savePicture(imageFile, pid)) {

@@ -9,17 +9,17 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.OrientationHelper;
 import androidx.recyclerview.widget.RecyclerView;
-import top.scraft.picman2.R;
-import top.scraft.picman2.activity.adapter.ArrangeAdapter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+
+import top.scraft.picman2.R;
+import top.scraft.picman2.activity.adapter.ArrangeAdapter;
 
 public class ArrangeActivity extends AppCompatActivity {
 
@@ -43,7 +43,7 @@ public class ArrangeActivity extends AppCompatActivity {
     private void load() {
         // 初始化视图
         RecyclerView recyclerArrange = findViewById(R.id.recycler_arrange);
-        recyclerArrange.setLayoutManager(new GridLayoutManager(this, 4, OrientationHelper.VERTICAL, false));
+        recyclerArrange.setLayoutManager(new GridLayoutManager(this, 4, RecyclerView.VERTICAL, false));
         recyclerArrange.setAdapter(adapter);
         if (!parseShareIntent()) {
             Toast.makeText(this, "没有接收到有效的图片分享", Toast.LENGTH_SHORT).show();
@@ -52,7 +52,6 @@ public class ArrangeActivity extends AppCompatActivity {
     }
 
     private boolean parseShareIntent() {
-        // TODO 只有一张图片时候直接打开编辑界面
         Intent intent = getIntent();
         if (intent != null) {
             String action = intent.getAction();
@@ -66,7 +65,7 @@ public class ArrangeActivity extends AppCompatActivity {
                 return false;
             }
             ArrayList<String> pathList = new ArrayList<>();
-            uriList.forEach(uri -> {
+            for (Uri uri : uriList) {
                 String scheme = uri.getScheme();
                 if (scheme != null) {
                     if (ContentResolver.SCHEME_FILE.equals(scheme)) {
@@ -86,9 +85,17 @@ public class ArrangeActivity extends AppCompatActivity {
                         }
                     }
                 }
-            });
+            }
             adapter.getPicturePathList().addAll(pathList);
             adapter.notifyDataSetChanged();
+            // TODO 是不是可以直接用编辑活动接收分享
+//            if (pathList.size() == 1) {
+//                // 只有一张图片时候直接打开编辑界面
+//                Intent editIntent = new Intent();
+//                editIntent.setClass(this, PictureEditorActivity.class);
+//                editIntent.putExtra("file", pathList.get(0));
+//                startActivity(editIntent);
+//            }
             return pathList.size() > 0;
         } else {
             return false;
@@ -98,12 +105,13 @@ public class ArrangeActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == 100 && grantResults.length == 2) {
-            if (!Arrays.stream(grantResults).allMatch(value -> value == PackageManager.PERMISSION_GRANTED)) {
-                Toast.makeText(this, "未授权存储读写权限,无法使用", Toast.LENGTH_LONG).show();
-                finish();
-            } else {
-                load();
+            for (int v : grantResults) {
+                if (v != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "未授权存储读写权限,无法使用", Toast.LENGTH_LONG).show();
+                    finish();
+                }
             }
+            load();
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }

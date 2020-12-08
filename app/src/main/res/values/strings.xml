@@ -21,14 +21,20 @@
     <!-- Messages Preferences -->
     <string name="settings_base_server">服务器地址</string>
 
-    <string name="button_search">搜索</string>
-    <string name="edit_search_hint">输入搜索关键字</string>
-
+    <!-- action text -->
     <string name="text_cancel">取消</string>
+    <string name="text_close">关闭</string>
     <string name="text_create">创建</string>
+    <string name="text_save">保存</string>
+    <string name="text_confirm">确定</string>
+    <string name="text_delete">删除</string>
+    <string name="text_search">搜索</string>
+    <!-- tag text -->
     <string name="text_pid">pid</string>
     <string name="text_description">描述</string>
     <string name="text_add_tag">添加标签</string>
     <string name="text_piclib_name">图库名</string>
+    <string name="text_info">信息</string>
+    <string name="edit_search_hint">输入搜索关键字</string>
 
 </resources>

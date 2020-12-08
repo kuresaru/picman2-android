@@ -14,16 +14,22 @@ public class Picture {
 
     @Id
     private Long appInternalPid;
-    private String pid;
-    private Long createTime;
     @NotNull
+    private String pid;
+    @NotNull
+    private Long createTime;
     private String creator;
     @NotNull
     private String description;
+    @NotNull
     private Long fileSize;
+    @NotNull
     private Integer height;
+    @NotNull
     private Integer width;
+    @NotNull
     private Boolean valid;
+    @NotNull
     private Long lastModify;
     @Convert(columnType = String.class, converter = PictureTagConverter.class)
     private ArrayList<String> tags;
@@ -38,9 +44,10 @@ public class Picture {
     /** Used for active entity operations. */
     @Generated(hash = 220989104)
     private transient PictureDao myDao;
-    @Generated(hash = 746727180)
-    public Picture(Long appInternalPid, String pid, Long createTime, @NotNull String creator, @NotNull String description,
-            Long fileSize, Integer height, Integer width, Boolean valid, Long lastModify, ArrayList<String> tags) {
+    @Generated(hash = 796325093)
+    public Picture(Long appInternalPid, @NotNull String pid, @NotNull Long createTime, String creator,
+            @NotNull String description, @NotNull Long fileSize, @NotNull Integer height, @NotNull Integer width,
+            @NotNull Boolean valid, @NotNull Long lastModify, ArrayList<String> tags) {
         this.appInternalPid = appInternalPid;
         this.pid = pid;
         this.createTime = createTime;

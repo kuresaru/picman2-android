@@ -18,7 +18,8 @@
                   android:label="@string/title_activity_pic_lib_manager"
                   android:theme="@style/AppTheme.NoActionBar">
         </activity>
-        <activity android:name=".activity.PictureEditorActivity">
+        <activity android:name=".activity.PictureEditorActivity"
+                  android:theme="@style/AppTheme.NoActionBar">
         </activity>
         <activity
                 android:name=".activity.ArrangeActivity"

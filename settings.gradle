@@ -1,2 +1,2 @@
-rootProject.name='暮光小猿图片管理器'
+rootProject.name='picman2-android'
 include ':app'

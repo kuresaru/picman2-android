@@ -5,6 +5,11 @@ import android.os.Environment;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class PictureStorageController {
 
@@ -45,6 +50,30 @@ public class PictureStorageController {
 
     private File getTempDirectory() {
         return checkDirectory(new File(getStorageDirectory(), STORAGE_DIRECTORY_TEMP_NAME));
+    }
+
+    /**
+     * 源图片保存到图片存储
+     *
+     * @param src 源图片
+     * @param pid 图片id
+     * @return 是否保存成功
+     */
+    public boolean savePicture(File src, String pid) {
+        File dst = new File(getPictureDirectory(), pid);
+        try (InputStream in = new FileInputStream(src);
+             OutputStream out = new FileOutputStream(dst)) {
+            byte[] buf = new byte[4096];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+                out.flush();
+            }
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
 }

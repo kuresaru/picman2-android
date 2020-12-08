@@ -32,6 +32,11 @@ public class PicLibManagerActivity extends AppCompatActivity {
 
         picmanStorage = PicmanStorage.getInstance(getApplicationContext());
 
+        PiclibManagerAdapter adapter = new PiclibManagerAdapter(this, piclibs);
+
+        ListView listView = findViewById(R.id.list_piclib);
+        listView.setAdapter(adapter);
+
         FloatingActionButton fab = findViewById(R.id.fab_piclib_create);
         fab.setOnClickListener(view -> {
             AlertDialog.Builder dialog = new AlertDialog.Builder(this);
@@ -44,23 +49,18 @@ public class PicLibManagerActivity extends AppCompatActivity {
                 if (name.isEmpty()) {
                     Toast.makeText(this, "请输入图库名", Toast.LENGTH_SHORT).show();
                 } else {
-                    picmanStorage.getPictureLibraryDao().insert(new PictureLibrary(null, null, name, null, true));
-                    reloadData();
+                    PictureLibrary newLib = new PictureLibrary(null, null, name, null, true);
+                    picmanStorage.getPictureLibraryDao().insert(newLib);
+                    piclibs.add(newLib);
+                    adapter.notifyDataSetChanged();
                 }
             });
             dialog.setNegativeButton(R.string.text_cancel, null);
             dialog.show();
         });
 
-        ListView listView = findViewById(R.id.list_piclib);
-        listView.setAdapter(new PiclibManagerAdapter(this, piclibs));
-
-        reloadData();
-    }
-
-    private void reloadData() {
-        piclibs.clear();
         piclibs.addAll(picmanStorage.getPictureLibraryDao().queryBuilder().list());
+        adapter.notifyDataSetChanged();
     }
 
 }

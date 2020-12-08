@@ -15,6 +15,7 @@ public class PicmanStorage {
 
     // simple storage
     private final SharedPreferences userdata;
+    @Getter
     private final PictureStorageController pictureStorage;
     // database
     private final DaoMaster.OpenHelper openHelper;

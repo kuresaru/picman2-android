@@ -11,7 +11,7 @@ public class ImageViewHolder extends RecyclerView.ViewHolder {
     private final int size;
 
     public ImageViewHolder(ViewGroup parent) {
-        super(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_arrange_grid_picture, parent, false));
+        super(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_gallery_picture, parent, false));
         size = parent.getWidth() / 4;
         itemView.setLayoutParams(new ViewGroup.LayoutParams(size, size));
     }

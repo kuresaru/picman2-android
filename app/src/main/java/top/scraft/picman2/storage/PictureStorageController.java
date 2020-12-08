@@ -52,6 +52,10 @@ public class PictureStorageController {
         return checkDirectory(new File(getStorageDirectory(), STORAGE_DIRECTORY_TEMP_NAME));
     }
 
+    public File getPicturePath(String pid) {
+        return new File(getPictureDirectory(), pid);
+    }
+
     /**
      * 源图片保存到图片存储
      *
@@ -60,7 +64,7 @@ public class PictureStorageController {
      * @return 是否保存成功
      */
     public boolean savePicture(File src, String pid) {
-        File dst = new File(getPictureDirectory(), pid);
+        File dst = getPicturePath(pid);
         try (InputStream in = new FileInputStream(src);
              OutputStream out = new FileOutputStream(dst)) {
             byte[] buf = new byte[4096];

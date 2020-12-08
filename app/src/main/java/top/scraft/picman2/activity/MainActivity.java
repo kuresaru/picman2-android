@@ -10,23 +10,33 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.material.textfield.TextInputEditText;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import top.scraft.picman2.R;
 import top.scraft.picman2.ServerController;
 import top.scraft.picman2.activity.adapter.SearchAdapter;
 import top.scraft.picman2.data.UserDetail;
 import top.scraft.picman2.storage.PicmanStorage;
-
-import java.util.Arrays;
+import top.scraft.picman2.storage.dao.Picture;
+import top.scraft.picman2.storage.dao.gen.PictureDao;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     public static final int ACTIVITY_RESULT_LOGIN = 100;
-    private final SearchAdapter searchAdapter = new SearchAdapter();
+
+    private SearchAdapter searchAdapter;
+    private List<Picture> searchResults = new ArrayList<>();
 
     private MenuItem systemMenuItem;
     private MenuItem loginMenuItem;
@@ -35,7 +45,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextInputEditText inputSearch;
 
     private ServerController serverController;
-    private PicmanStorage picmanStorage;
     private String sacLoginUrl = null;
 
     @Override
@@ -45,12 +54,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // find views
         inputSearch = findViewById(R.id.inputSearch);
         findViewById(R.id.buttonSearch).setOnClickListener(this);
-//        RecyclerView recyclerView = findViewById(R.id.main_gallery);
+        RecyclerView recyclerView = findViewById(R.id.main_gallery);
         // get controllers
         serverController = ServerController.getInstance(getApplicationContext());
-        picmanStorage = PicmanStorage.getInstance(getApplicationContext());
         // init
-//        recyclerView.setAdapter(searchAdapter);
+        searchAdapter = new SearchAdapter(this, searchResults);
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 4, RecyclerView.VERTICAL, false));
+        recyclerView.setAdapter(searchAdapter);
         requestPermissions();
         checkLogin();
     }
@@ -89,7 +99,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (keyword.isEmpty()) {
                     Toast.makeText(this, "搜索关键字不能为空", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(this, keyword, Toast.LENGTH_SHORT).show(); // test
+                    PictureDao pDao = PicmanStorage.getInstance(getApplicationContext()).getPictureDao();
+                    searchResults.clear();
+                    searchResults.addAll(pDao.queryBuilder().where(PictureDao.Properties.Description.like("%" + searchText.toString() + "%")).list()); // FIXME 遇到描述有%的怎么办?
+                    // TODO 根据Tag找图片
+                    searchAdapter.notifyDataSetChanged();
+                    if (searchResults.size() == 0) {
+                        Toast.makeText(this, "搜索结果为空", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         }
@@ -180,9 +197,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == 100 && grantResults.length == 2) {
-            if (!Arrays.stream(grantResults).allMatch(value -> value == PackageManager.PERMISSION_GRANTED)) {
-                Toast.makeText(this, "未授权存储读写权限,无法使用", Toast.LENGTH_LONG).show();
-                finish();
+            for (int v : grantResults) {
+                if (v != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "未授权存储读写权限,无法使用", Toast.LENGTH_LONG).show();
+                    finish();
+                }
             }
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);

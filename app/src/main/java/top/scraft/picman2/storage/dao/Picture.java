@@ -1,13 +1,19 @@
 package top.scraft.picman2.storage.dao;
 
-import org.greenrobot.greendao.annotation.*;
-
-import java.util.ArrayList;
-import java.util.List;
 import org.greenrobot.greendao.DaoException;
+import org.greenrobot.greendao.annotation.Entity;
+import org.greenrobot.greendao.annotation.Generated;
+import org.greenrobot.greendao.annotation.Id;
+import org.greenrobot.greendao.annotation.JoinEntity;
+import org.greenrobot.greendao.annotation.NotNull;
+import org.greenrobot.greendao.annotation.ToMany;
+
+import java.util.List;
+
 import top.scraft.picman2.storage.dao.gen.DaoSession;
-import top.scraft.picman2.storage.dao.gen.PictureLibraryDao;
 import top.scraft.picman2.storage.dao.gen.PictureDao;
+import top.scraft.picman2.storage.dao.gen.PictureLibraryDao;
+import top.scraft.picman2.storage.dao.gen.PictureTagDao;
 
 @Entity
 public class Picture {
@@ -31,8 +37,8 @@ public class Picture {
     private Boolean valid;
     @NotNull
     private Long lastModify;
-    @Convert(columnType = String.class, converter = PictureTagConverter.class)
-    private ArrayList<String> tags;
+    @ToMany(referencedJoinProperty = "appInternalPid")
+    private List<PictureTag> tags;
     @ToMany
     @JoinEntity(entity = PiclibPictureMap.class, sourceProperty = "appInternalPid", targetProperty = "appInternalLid")
     private List<PictureLibrary> libraries;
@@ -44,10 +50,10 @@ public class Picture {
     /** Used for active entity operations. */
     @Generated(hash = 220989104)
     private transient PictureDao myDao;
-    @Generated(hash = 796325093)
+    @Generated(hash = 1926985844)
     public Picture(Long appInternalPid, @NotNull String pid, @NotNull Long createTime, String creator,
             @NotNull String description, @NotNull Long fileSize, @NotNull Integer height, @NotNull Integer width,
-            @NotNull Boolean valid, @NotNull Long lastModify, ArrayList<String> tags) {
+            @NotNull Boolean valid, @NotNull Long lastModify) {
         this.appInternalPid = appInternalPid;
         this.pid = pid;
         this.createTime = createTime;
@@ -58,7 +64,6 @@ public class Picture {
         this.width = width;
         this.valid = valid;
         this.lastModify = lastModify;
-        this.tags = tags;
     }
     @Generated(hash = 1602548376)
     public Picture() {
@@ -123,12 +128,7 @@ public class Picture {
     public void setLastModify(Long lastModify) {
         this.lastModify = lastModify;
     }
-    public ArrayList<String> getTags() {
-        return this.tags;
-    }
-    public void setTags(ArrayList<String> tags) {
-        this.tags = tags;
-    }
+
     /**
      * To-many relationship, resolved on first access (and after reset).
      * Changes to to-many relations are not persisted, make changes to the target entity.
@@ -193,6 +193,32 @@ public class Picture {
     public void __setDaoSession(DaoSession daoSession) {
         this.daoSession = daoSession;
         myDao = daoSession != null ? daoSession.getPictureDao() : null;
+    }
+    /**
+     * To-many relationship, resolved on first access (and after reset).
+     * Changes to to-many relations are not persisted, make changes to the target entity.
+     */
+    @Generated(hash = 2033136060)
+    public List<PictureTag> getTags() {
+        if (tags == null) {
+            final DaoSession daoSession = this.daoSession;
+            if (daoSession == null) {
+                throw new DaoException("Entity is detached from DAO context");
+            }
+            PictureTagDao targetDao = daoSession.getPictureTagDao();
+            List<PictureTag> tagsNew = targetDao._queryPicture_Tags(appInternalPid);
+            synchronized (this) {
+                if (tags == null) {
+                    tags = tagsNew;
+                }
+            }
+        }
+        return tags;
+    }
+    /** Resets a to-many relationship, making the next get call to query for a fresh result. */
+    @Generated(hash = 404234)
+    public synchronized void resetTags() {
+        tags = null;
     }
 
 }

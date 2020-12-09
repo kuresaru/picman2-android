@@ -26,7 +26,7 @@ public class PiclibInfoAdapter extends BaseAdapter {
         content.add("ID=" + (library.getOffline() ? "N/A" : library.getLid()));
         content.add("图库名=" + library.getName());
         content.add("所有者=" + (library.getOffline() ? "N/A" : library.getOwner()));
-        long pictureCount = PicmanStorage.getInstance(context).getPiclibPictureMapDao().queryBuilder()
+        long pictureCount = PicmanStorage.getInstance(context).getDaoSession().getPiclibPictureMapDao().queryBuilder()
                 .where(PiclibPictureMapDao.Properties.AppInternalLid.eq(library.getAppInternalLid())).count();
         content.add("图片数=" + pictureCount);
     }

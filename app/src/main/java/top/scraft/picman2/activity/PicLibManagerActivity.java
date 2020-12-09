@@ -50,7 +50,7 @@ public class PicLibManagerActivity extends AppCompatActivity {
                     Toast.makeText(this, "请输入图库名", Toast.LENGTH_SHORT).show();
                 } else {
                     PictureLibrary newLib = new PictureLibrary(null, null, name, null, true);
-                    picmanStorage.getPictureLibraryDao().insert(newLib);
+                    picmanStorage.getDaoSession().getPictureLibraryDao().insert(newLib);
                     piclibs.add(newLib);
                     adapter.notifyDataSetChanged();
                 }
@@ -59,7 +59,7 @@ public class PicLibManagerActivity extends AppCompatActivity {
             dialog.show();
         });
 
-        piclibs.addAll(picmanStorage.getPictureLibraryDao().queryBuilder().list());
+        piclibs.addAll(picmanStorage.getDaoSession().getPictureLibraryDao().queryBuilder().list());
         adapter.notifyDataSetChanged();
     }
 

@@ -132,8 +132,14 @@ public class PiclibManagerAdapter extends BaseAdapter {
                             confirm.setMessage(String.format("确认删除图库[%s]?", library.getName()));
                             confirm.setNegativeButton(R.string.text_cancel, (d, w) -> alertDialog.show());
                             confirm.setPositiveButton(R.string.text_delete, (d, w) -> {
-                                PicmanStorage.getInstance(context).getPictureLibraryDao().deleteByKey(library.getAppInternalLid());
-                                infoList.removeIf(l -> l.getAppInternalLid().equals(library.getAppInternalLid()));
+                                PicmanStorage.getInstance(context).getDaoSession().getPictureLibraryDao().deleteByKey(library.getAppInternalLid());
+                                Iterator<PictureLibrary> itr = infoList.iterator();
+                                while (itr.hasNext()) {
+                                    PictureLibrary l = itr.next();
+                                    if (l.getAppInternalLid().equals(library.getAppInternalLid())) {
+                                        itr.remove();
+                                    }
+                                }
                                 PiclibManagerAdapter.this.notifyDataSetChanged();
                             });
                             alertDialog.dismiss();

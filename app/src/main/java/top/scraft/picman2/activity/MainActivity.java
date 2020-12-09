@@ -21,7 +21,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import top.scraft.picman2.R;
 import top.scraft.picman2.ServerController;
@@ -29,7 +31,10 @@ import top.scraft.picman2.activity.adapter.SearchAdapter;
 import top.scraft.picman2.data.UserDetail;
 import top.scraft.picman2.storage.PicmanStorage;
 import top.scraft.picman2.storage.dao.Picture;
+import top.scraft.picman2.storage.dao.PictureTag;
+import top.scraft.picman2.storage.dao.gen.DaoSession;
 import top.scraft.picman2.storage.dao.gen.PictureDao;
+import top.scraft.picman2.storage.dao.gen.PictureTagDao;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -99,10 +104,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (keyword.isEmpty()) {
                     Toast.makeText(this, "搜索关键字不能为空", Toast.LENGTH_SHORT).show();
                 } else {
-                    PictureDao pDao = PicmanStorage.getInstance(getApplicationContext()).getPictureDao();
+                    DaoSession daoSession = PicmanStorage.getInstance(getApplicationContext()).getDaoSession();
+                    PictureDao pDao = daoSession.getPictureDao();
+                    PictureTagDao tDao = daoSession.getPictureTagDao();
+                    String likePattern = "%" + searchText.toString() + "%";
                     searchResults.clear();
-                    searchResults.addAll(pDao.queryBuilder().where(PictureDao.Properties.Description.like("%" + searchText.toString() + "%")).list()); // FIXME 遇到描述有%的怎么办?
-                    // TODO 根据Tag找图片
+                    searchResults.addAll(pDao.queryBuilder().where(PictureDao.Properties.Description.like(likePattern)).list()); // FIXME 遇到描述有%的怎么办?
+                    // 找到所有Tag匹配的ipid
+                    Set<Long> tagMatchedInternalPids = new HashSet<>();
+                    for (PictureTag pictureTag : tDao.queryBuilder().where(PictureTagDao.Properties.Tag.like(likePattern)).list()) {
+                        tagMatchedInternalPids.add(pictureTag.getAppInternalPid());
+                    }
+                    // 去掉重复的ipid
+                    for (Picture picture : searchResults) {
+                        tagMatchedInternalPids.remove(picture.getAppInternalPid());
+                    }
+                    // 加入结果
+                    searchResults.addAll(pDao.queryBuilder().where(PictureDao.Properties.AppInternalPid.in(tagMatchedInternalPids)).list());
+
                     searchAdapter.notifyDataSetChanged();
                     if (searchResults.size() == 0) {
                         Toast.makeText(this, "搜索结果为空", Toast.LENGTH_SHORT).show();

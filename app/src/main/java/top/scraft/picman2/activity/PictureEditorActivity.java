@@ -28,11 +28,16 @@ import top.scraft.picman2.storage.PicmanStorage;
 import top.scraft.picman2.storage.dao.PiclibPictureMap;
 import top.scraft.picman2.storage.dao.Picture;
 import top.scraft.picman2.storage.dao.PictureLibrary;
+import top.scraft.picman2.storage.dao.PictureTag;
+import top.scraft.picman2.storage.dao.gen.DaoSession;
+import top.scraft.picman2.storage.dao.gen.PiclibPictureMapDao;
 import top.scraft.picman2.storage.dao.gen.PictureDao;
+import top.scraft.picman2.storage.dao.gen.PictureTagDao;
 import top.scraft.picman2.utils.FileUtils;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 public class PictureEditorActivity extends AppCompatActivity {
 
@@ -46,7 +51,7 @@ public class PictureEditorActivity extends AppCompatActivity {
     private LayoutInflater layoutInflater;
     private File imageFile = null;
     private String pid = null;
-    private ArrayList<String> tagList = new ArrayList<>();
+    private final ArrayList<String> tagList = new ArrayList<>();
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -90,7 +95,7 @@ public class PictureEditorActivity extends AppCompatActivity {
         loadImage();
 
         PiclibSpinnerAdapter adapter = new PiclibSpinnerAdapter(this,
-                PicmanStorage.getInstance(getApplicationContext()).getPictureLibraryDao().queryBuilder().list());
+                PicmanStorage.getInstance(getApplicationContext()).getDaoSession().getPictureLibraryDao().queryBuilder().list());
         piclibSelector.setAdapter(adapter);
         piclibSelector.setVisibility(View.VISIBLE);
         if (adapter.getCount() == 0) {
@@ -118,10 +123,14 @@ public class PictureEditorActivity extends AppCompatActivity {
             return;
         }
         PictureLibrary library = (PictureLibrary) piclibSelector.getSelectedItem();
+
         PicmanStorage picmanStorage = PicmanStorage.getInstance(getApplicationContext());
-        PictureDao dao = picmanStorage.getPictureDao();
+        DaoSession daoSession = picmanStorage.getDaoSession();
+        PictureDao pDao = daoSession.getPictureDao();
+        PictureTagDao tDao = daoSession.getPictureTagDao();
+        PiclibPictureMapDao lpmDao = daoSession.getPiclibPictureMapDao();
         if (library.getOffline()) {
-            Picture oldRecord = dao.queryBuilder().where(PictureDao.Properties.Pid.eq(pid)).unique();
+            Picture oldRecord = pDao.queryBuilder().where(PictureDao.Properties.Pid.eq(pid)).unique();
             boolean newPicture = oldRecord == null;
             if (newPicture) {
                 oldRecord = new Picture();
@@ -135,21 +144,25 @@ public class PictureEditorActivity extends AppCompatActivity {
             }
             oldRecord.setDescription(description);
             oldRecord.setLastModify(System.currentTimeMillis() / 1000);
-            oldRecord.setTags(tagList);
-            dao.insertOrReplace(oldRecord);
-            boolean piclibExists = false;
-            for (PictureLibrary oldRecordLibrary : oldRecord.getLibraries()) {
-                if (oldRecordLibrary.getAppInternalLid().equals(library.getAppInternalLid())) {
-                    piclibExists = true;
-                    break;
-                }
+            pDao.insertOrReplace(oldRecord);
+            // 更新Tag
+            tDao.queryBuilder().where(PictureTagDao.Properties.AppInternalPid.eq(oldRecord.getAppInternalPid())).buildDelete().executeDeleteWithoutDetachingEntities();
+            List<PictureTag> newTags = new ArrayList<>();
+            for (String s : tagList) {
+                PictureTag tag = new PictureTag();
+                tag.setAppInternalPid(oldRecord.getAppInternalPid());
+                tag.setTag(s);
+                newTags.add(tag);
             }
-            if (!piclibExists) {
-                PiclibPictureMap ppMap = new PiclibPictureMap();
-                ppMap.setAppInternalLid(library.getAppInternalLid());
-                ppMap.setAppInternalPid(oldRecord.getAppInternalPid());
-                picmanStorage.getPiclibPictureMapDao().insert(ppMap);
-            }
+            tDao.insertInTx(newTags);
+            // 更新piclib
+            lpmDao.queryBuilder().where(PiclibPictureMapDao.Properties.AppInternalLid.eq(library.getAppInternalLid()),
+                    PiclibPictureMapDao.Properties.AppInternalPid.eq(oldRecord.getAppInternalPid())).buildDelete().executeDeleteWithoutDetachingEntities();
+            PiclibPictureMap lpMap = new PiclibPictureMap();
+            lpMap.setAppInternalLid(library.getAppInternalLid());
+            lpMap.setAppInternalPid(oldRecord.getAppInternalPid());
+            lpmDao.insert(lpMap);
+            // 保存图片文件
             if (newPicture) {
                 if (picmanStorage.getPictureStorage().savePicture(imageFile, pid)) {
                     Toast.makeText(this, "图片已保存", Toast.LENGTH_SHORT).show();
@@ -183,14 +196,14 @@ public class PictureEditorActivity extends AppCompatActivity {
                         if (md5 != null) {
                             String path = imageFile.getAbsolutePath();
                             pid = md5 + path.substring(path.lastIndexOf('.'));
-                            PictureDao dao = PicmanStorage.getInstance(getApplicationContext()).getPictureDao();
+                            PictureDao dao = PicmanStorage.getInstance(getApplicationContext()).getDaoSession().getPictureDao();
                             Picture oldRecord = dao.queryBuilder().where(PictureDao.Properties.Pid.eq(pid)).unique();
                             runOnUiThread(() -> {
                                 pidEdit.setText(pid);
                                 if (oldRecord != null) {
                                     descriptionEditor.getEditText().setText(oldRecord.getDescription());
-                                    for (String tag : oldRecord.getTags()) {
-                                        addTag(tag);
+                                    for (PictureTag tag : oldRecord.getTags()) {
+                                        addTag(tag.getTag());
                                     }
                                 }
                             });

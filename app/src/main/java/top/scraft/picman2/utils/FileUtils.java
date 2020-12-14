@@ -1,12 +1,16 @@
 package top.scraft.picman2.utils;
 
-import lombok.SneakyThrows;
+import androidx.annotation.NonNull;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import lombok.SneakyThrows;
 
 public class FileUtils {
 
@@ -31,6 +35,16 @@ public class FileUtils {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public static void saveFileFromStream(@NonNull InputStream src, @NonNull File dst) throws IOException {
+        int len;
+        byte[] buf = new byte[4096];
+        FileOutputStream outputStream = new FileOutputStream(dst, false);
+        while ((len = src.read(buf)) != -1) {
+            outputStream.write(buf, 0, len);
+        }
+        outputStream.close();
     }
 
 }

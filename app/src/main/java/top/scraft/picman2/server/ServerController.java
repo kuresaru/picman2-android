@@ -4,15 +4,20 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import androidx.annotation.NonNull;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,6 +31,7 @@ import top.scraft.picman2.server.data.InfoResult;
 import top.scraft.picman2.server.data.PicLibDetail;
 import top.scraft.picman2.server.data.PictureDetail;
 import top.scraft.picman2.server.data.UserDetail;
+import top.scraft.picman2.utils.FileUtils;
 
 public class ServerController {
 
@@ -173,7 +179,7 @@ public class ServerController {
         return serverValid;
     }
 
-    public InfoResult getServerInfo() {
+    private InfoResult getServerInfo() {
         AtomicReference<InfoResult> atomicReference = new AtomicReference<>(null);
         request("/api/info", (code, body, e) -> {
             if (code == 200 && body != null) {
@@ -198,6 +204,8 @@ public class ServerController {
         return result.get();
     }
 
+    // piclib
+
     public List<PicLibDetail> getPiclibs() {
         AtomicReference<List<PicLibDetail>> result = new AtomicReference<>(null);
         request("/api/piclib/get_all", (code, body, e) -> {
@@ -220,6 +228,23 @@ public class ServerController {
             }
         });
         return atomicReference.get();
+    }
+
+    // picture
+
+    public boolean savePictureThumb(int lid, @NonNull String pid, @NonNull File dst) {
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+        request(String.format(Locale.US, "/api/picture/thumb/%d/%s", lid, pid), (code, body, e) -> {
+            if (code == 200 && body != null) {
+                try {
+                    FileUtils.saveFileFromStream(body.byteStream(), dst);
+                    atomicBoolean.set(true);
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+        });
+        return atomicBoolean.get();
     }
 
 }

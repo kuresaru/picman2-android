@@ -1,14 +1,15 @@
 package top.scraft.picman2.activity.adapter;
 
-import android.net.Uri;
 import android.view.ViewGroup;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import lombok.Getter;
-import top.scraft.picman2.activity.adapter.viewholder.ImageViewHolder;
 
 import java.io.File;
 import java.util.ArrayList;
+
+import lombok.Getter;
+import top.scraft.picman2.activity.adapter.viewholder.ImageViewHolder;
 
 public class GalleryAdapter extends RecyclerView.Adapter<ImageViewHolder> {
 
@@ -23,7 +24,7 @@ public class GalleryAdapter extends RecyclerView.Adapter<ImageViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull ImageViewHolder holder, int position) {
-        holder.getView().setImageURI(Uri.fromFile(new File(picturePathList.get(position))));
+        holder.setImage(new File(picturePathList.get(position)));
     }
 
     @Override

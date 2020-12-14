@@ -13,8 +13,8 @@ import java.io.OutputStream;
 
 public class PictureStorageController {
 
-    private static final String STORAGE_DIRECTORY_PATH = "Kuresaru/Picman2";
     private static final String STORAGE_DIRECTORY_PICTURE_NAME = "Pictures";
+    private static final String STORAGE_DIRECTORY_THUMB_NAME = "Thumbs";
     private static final String STORAGE_DIRECTORY_TEMP_NAME = "Temp";
 
     private final Context context;
@@ -24,7 +24,7 @@ public class PictureStorageController {
     }
 
     private File getStorageDirectory() {
-        return new File(Environment.getExternalStorageDirectory(), STORAGE_DIRECTORY_PATH);
+        return context.getExternalFilesDir(null);
     }
 
     /**
@@ -48,8 +48,16 @@ public class PictureStorageController {
         return checkDirectory(new File(getStorageDirectory(), STORAGE_DIRECTORY_PICTURE_NAME));
     }
 
+    private File getThumbDirectory() {
+        return checkDirectory(new File(getStorageDirectory(), STORAGE_DIRECTORY_THUMB_NAME));
+    }
+
     private File getTempDirectory() {
         return checkDirectory(new File(getStorageDirectory(), STORAGE_DIRECTORY_TEMP_NAME));
+    }
+
+    public File getThumbPath(String pid) {
+        return new File(getThumbDirectory(), pid);
     }
 
     public File getPicturePath(String pid) {

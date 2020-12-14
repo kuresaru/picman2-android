@@ -1,5 +1,6 @@
 package top.scraft.picman2.activity;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -21,6 +22,7 @@ public class BrowserActivity extends AppCompatActivity {
     private WebView webView;
     private ServerController serverController;
 
+    @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

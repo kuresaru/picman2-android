@@ -324,7 +324,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Intent intent = new Intent(this, BrowserActivity.class);
                 intent.putExtra("URL", userDetail.getSacLoginUrl());
                 intent.putExtra("TYPE", "LOGIN");
-                intent.putExtra("TITLE", "登录");
                 startActivityForResult(intent, ACTIVITY_RESULT_LOGIN);
             }
         } else if (id == R.id.menu_main_logout) {

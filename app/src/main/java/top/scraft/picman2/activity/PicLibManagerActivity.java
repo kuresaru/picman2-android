@@ -49,7 +49,7 @@ public class PicLibManagerActivity extends AppCompatActivity {
                 if (name.isEmpty()) {
                     Toast.makeText(this, "请输入图库名", Toast.LENGTH_SHORT).show();
                 } else {
-                    PictureLibrary newLib = new PictureLibrary(null, null, name, null, true);
+                    PictureLibrary newLib = new PictureLibrary(null, null, name, null, 0L, true);
                     picmanStorage.getDaoSession().getPictureLibraryDao().insert(newLib);
                     piclibs.add(newLib);
                     adapter.notifyDataSetChanged();

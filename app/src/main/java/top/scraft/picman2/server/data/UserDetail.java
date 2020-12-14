@@ -1,4 +1,4 @@
-package top.scraft.picman2.data;
+package top.scraft.picman2.server.data;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -137,7 +137,7 @@ public class PictureEditorActivity extends AppCompatActivity {
                 oldRecord.setPid(pid);
                 oldRecord.setCreateTime(System.currentTimeMillis() / 1000);
                 oldRecord.setFileSize(imageFile.length());
-                Bitmap bmp = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+                Bitmap bmp = BitmapFactory.decodeFile(imageFile.getAbsolutePath()); // TODO gif
                 oldRecord.setWidth(bmp.getWidth());
                 oldRecord.setHeight(bmp.getHeight());
                 oldRecord.setValid(true);

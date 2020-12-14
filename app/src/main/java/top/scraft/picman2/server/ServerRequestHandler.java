@@ -1,4 +1,4 @@
-package top.scraft.picman2;
+package top.scraft.picman2.server;
 
 import okhttp3.ResponseBody;
 

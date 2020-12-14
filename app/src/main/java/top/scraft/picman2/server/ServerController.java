@@ -1,13 +1,17 @@
-package top.scraft.picman2;
+package top.scraft.picman2.server;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
+
+import lombok.Getter;
 import okhttp3.*;
-import top.scraft.picman2.data.PicLibDetail;
-import top.scraft.picman2.data.UserDetail;
+import top.scraft.picman2.server.data.InfoResult;
+import top.scraft.picman2.server.data.PicLibDetail;
+import top.scraft.picman2.server.data.PictureDetail;
+import top.scraft.picman2.server.data.UserDetail;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,7 +22,13 @@ import java.util.regex.Pattern;
 
 public class ServerController {
 
+    public static final int API_VERSION = 1;
     private static ServerController instance = null;
+
+    @Getter
+    private String testResult = "正在初始化";
+    @Getter
+    private boolean serverValid = false;
 
     private final Gson gson = new Gson();
     private final String userAgent = "Picman2 Android";
@@ -135,24 +145,31 @@ public class ServerController {
         }
     }
 
-    @Deprecated
-    private Response requestGet(String url) throws IOException {
-        return httpClient.newCall(requestBuilder(url).build()).execute();
+    public boolean test() {
+        InfoResult info = getServerInfo();
+        if (info != null) {
+            if (info.getApiVersion() == ServerController.API_VERSION) {
+                testResult = "服务器正常";
+                serverValid = true;
+            } else {
+                testResult = "服务器版本不匹配";
+                serverValid = false;
+            }
+        } else {
+            testResult = "服务器连接失败";
+            serverValid = false;
+        }
+        return serverValid;
     }
 
-    public boolean ping() {
-        String url = getServer() + "/api/ping";
-        try (Response response = requestGet(url)) {
-            if (response.code() == 200) {
-                ResponseBody body = response.body();
-                if (body != null) {
-                    return body.string().equals("pong");
-                }
+    public InfoResult getServerInfo() {
+        AtomicReference<InfoResult> atomicReference = new AtomicReference<>(null);
+        request("/api/info", (code, body, e) -> {
+            if (code == 200 && body != null) {
+                atomicReference.set(gson.fromJson(body.charStream(), InfoResult.class));
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
+        });
+        return atomicReference.get();
     }
 
     public void logout() {
@@ -170,7 +187,7 @@ public class ServerController {
         return result.get();
     }
 
-    public List<PicLibDetail> getPicLibs() {
+    public List<PicLibDetail> getPiclibs() {
         AtomicReference<List<PicLibDetail>> result = new AtomicReference<>(null);
         request("/api/piclib/get_all", (code, body, e) -> {
             if (code == 200 && body != null) {
@@ -182,6 +199,16 @@ public class ServerController {
             }
         });
         return result.get();
+    }
+
+    public List<PictureDetail> getPiclibContent(int lid) {
+        AtomicReference<List<PictureDetail>> atomicReference = new AtomicReference<>(null);
+        request("/api/piclib/" + lid + "/content", (code, body, e) -> {
+            if (code == 200 && body != null) {
+                atomicReference.set(gson.fromJson(body.charStream(), new TypeToken<List<PictureDetail>>(){}.getType()));
+            }
+        });
+        return atomicReference.get();
     }
 
 }

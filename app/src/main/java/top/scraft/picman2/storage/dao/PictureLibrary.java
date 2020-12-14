@@ -26,6 +26,8 @@ public class PictureLibrary {
     @ToMany
     @JoinEntity(entity = PiclibPictureMap.class, sourceProperty = "appInternalLid", targetProperty = "appInternalPid")
     private List<Picture> pictures;
+    @NotNull
+    private Long lastUpdate;
     private boolean offline;
 
 
@@ -35,12 +37,14 @@ public class PictureLibrary {
     /** Used for active entity operations. */
     @Generated(hash = 891498684)
     private transient PictureLibraryDao myDao;
-    @Generated(hash = 416263514)
-    public PictureLibrary(Long appInternalLid, Integer lid, @NotNull String name, String owner, boolean offline) {
+    @Generated(hash = 1566268425)
+    public PictureLibrary(Long appInternalLid, Integer lid, @NotNull String name, String owner, @NotNull Long lastUpdate,
+            boolean offline) {
         this.appInternalLid = appInternalLid;
         this.lid = lid;
         this.name = name;
         this.owner = owner;
+        this.lastUpdate = lastUpdate;
         this.offline = offline;
     }
     @Generated(hash = 1073290780)
@@ -140,6 +144,12 @@ public class PictureLibrary {
     public void __setDaoSession(DaoSession daoSession) {
         this.daoSession = daoSession;
         myDao = daoSession != null ? daoSession.getPictureLibraryDao() : null;
+    }
+    public Long getLastUpdate() {
+        return this.lastUpdate;
+    }
+    public void setLastUpdate(Long lastUpdate) {
+        this.lastUpdate = lastUpdate;
     }
 
 }

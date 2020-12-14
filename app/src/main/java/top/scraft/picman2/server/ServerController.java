@@ -3,15 +3,12 @@ package top.scraft.picman2.server;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import com.google.gson.*;
-import com.google.gson.reflect.TypeToken;
 
-import lombok.Getter;
-import okhttp3.*;
-import top.scraft.picman2.server.data.InfoResult;
-import top.scraft.picman2.server.data.PicLibDetail;
-import top.scraft.picman2.server.data.PictureDetail;
-import top.scraft.picman2.server.data.UserDetail;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,6 +16,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import lombok.Getter;
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import top.scraft.picman2.server.data.InfoResult;
+import top.scraft.picman2.server.data.PicLibDetail;
+import top.scraft.picman2.server.data.PictureDetail;
+import top.scraft.picman2.server.data.UserDetail;
 
 public class ServerController {
 
@@ -62,12 +69,16 @@ public class ServerController {
         sharedPreferences.edit().putString("sact", sact).apply();
     }
 
+    public String getJsessionid() {
+        return this.jsessionid;
+    }
+
     public void setJsessionid(String jsessionid) {
         this.jsessionid = jsessionid;
         sharedPreferences.edit().putString("jsessionid", jsessionid).apply();
     }
 
-    private String getServer() {
+    public String getServer() {
         final String defValue = "https://localhost";
         String server = sharedPreferences.getString("server", defValue);
         if (server == null) {

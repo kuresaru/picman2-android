@@ -54,6 +54,8 @@ dependencies {
 
     implementation 'org.greenrobot:greendao:3.3.0'
 
+    api 'com.tencent.tbs.tbssdk:sdk:43967'
+
 }
 
 greendao {

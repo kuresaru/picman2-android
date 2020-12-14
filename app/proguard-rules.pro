@@ -29,3 +29,13 @@ public static java.lang.String TABLENAME;
 -dontwarn net.sqlcipher.database.**
 # If you do NOT use RxJava:
 -dontwarn rx.**
+
+# tbs
+-dontwarn dalvik.**
+-dontwarn com.tencent.smtt.**
+-keep class com.tencent.smtt.** {
+    *;
+}
+-keep class com.tencent.tbs.** {
+    *;
+}

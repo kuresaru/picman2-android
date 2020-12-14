@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.textfield.TextInputEditText;
+import com.tencent.smtt.sdk.QbSdk;
 
 import org.greenrobot.greendao.query.CloseableListIterator;
 import org.greenrobot.greendao.query.QueryBuilder;
@@ -65,7 +66,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private ServerController serverController;
     private PicmanStorage picmanStorage;
-    private String sacLoginUrl = null;
+    private UserDetail userDetail = null;
     private boolean syncRotating = false;
 
     @Override
@@ -82,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         serverController = ServerController.getInstance(getApplicationContext());
         picmanStorage = PicmanStorage.getInstance(getApplicationContext());
         // init
+        QbSdk.initX5Environment(getApplicationContext(), null);
         searchAdapter = new SearchAdapter(this, searchResults);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 4, RecyclerView.VERTICAL, false));
         recyclerView.setAdapter(searchAdapter);
@@ -99,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         new Thread(() -> {
             boolean serverValid = serverController.test();
             if (serverValid) {
-                UserDetail userDetail = serverController.getUserDetail();
+                userDetail = serverController.getUserDetail();
                 if (userDetail != null) {
                     runOnUiThread(() -> {
                         if (userDetail.isLoggedIn()) {
@@ -199,12 +201,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             }).start();
                         } else {
                             Toast.makeText(this, "未登录", Toast.LENGTH_SHORT).show();
-                            sacLoginUrl = userDetail.getSacLoginUrl();
                             setSyncMenuItemRotation(false);
                         }
                         if (loginMenuItem != null) {
                             systemMenuItem.setVisible(userDetail.isAdmin());
-                            loginMenuItem.setVisible((!userDetail.isLoggedIn()) && (sacLoginUrl != null));
+                            loginMenuItem.setVisible((!userDetail.isLoggedIn()) && (userDetail.getSacLoginUrl() != null));
                             logoutMenuItem.setVisible(userDetail.isLoggedIn());
                         }
                     });
@@ -313,54 +314,41 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_main_login: {
-                if ("testuser".equals(sacLoginUrl)) {
-                    Toast.makeText(this, "testuser", Toast.LENGTH_SHORT).show();
-                    serverController.setSact("0123456789abcdef0123456789abcdef");
-                    syncMetadata();
-                } else {
-                    Intent intent = new Intent(this, BrowserActivity.class);
-                    intent.putExtra("URL", sacLoginUrl);
-                    intent.putExtra("TITLE", "登录");
-                    startActivityForResult(intent, ACTIVITY_RESULT_LOGIN);
-                }
-                break;
+        int id = item.getItemId();
+        if (id == R.id.menu_main_login) {
+            if ("testuser".equals(userDetail.getSacLoginUrl())) {
+                Toast.makeText(this, "testuser", Toast.LENGTH_SHORT).show();
+                serverController.setSact("0123456789abcdef0123456789abcdef");
+                syncMetadata();
+            } else {
+                Intent intent = new Intent(this, BrowserActivity.class);
+                intent.putExtra("URL", userDetail.getSacLoginUrl());
+                intent.putExtra("TYPE", "LOGIN");
+                intent.putExtra("TITLE", "登录");
+                startActivityForResult(intent, ACTIVITY_RESULT_LOGIN);
             }
-            case R.id.menu_main_logout: {
-                new Thread(() -> {
-                    serverController.logout();
-                    runOnUiThread(this::syncMetadata);
-                }).start();
-                break;
-            }
-            case R.id.menu_main_settings: {
-                startActivity(new Intent(this, SettingsActivity.class));
-                break;
-            }
-            case R.id.menu_main_ping:
-                menuPing();
-                break;
-            case R.id.menu_main_sync:
-                menuSync();
-                break;
-            case R.id.menu_main_piclib:
-                startActivity(new Intent(this, PicLibManagerActivity.class));
-                break;
+        } else if (id == R.id.menu_main_logout) {
+            new Thread(() -> {
+                serverController.logout();
+                runOnUiThread(this::syncMetadata);
+            }).start();
+        } else if (id == R.id.menu_main_settings) {
+            startActivity(new Intent(this, SettingsActivity.class));
+        } else if (id == R.id.menu_main_ping) {
+            Toast.makeText(this, "正在测试", Toast.LENGTH_SHORT).show();
+            new Thread(() -> {
+                serverController.test();
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, serverController.getTestResult(), Toast.LENGTH_SHORT).show());
+            }).start();
+        } else if (id == R.id.menu_main_sync) {
+        } else if (id == R.id.menu_main_piclib) {
+            startActivity(new Intent(this, PicLibManagerActivity.class));
+        } else if (id == R.id.menu_main_system) {
+            Intent intent = new Intent(this, BrowserActivity.class);
+            intent.putExtra("URL", serverController.getServer().concat("/#/admin"));
+            startActivity(intent);
         }
         return false;
-    }
-
-    private void menuPing() {
-        Toast.makeText(this, "正在测试", Toast.LENGTH_SHORT).show();
-        new Thread(() -> {
-            serverController.test();
-            runOnUiThread(() -> Toast.makeText(MainActivity.this, serverController.getTestResult(), Toast.LENGTH_SHORT).show());
-        }).start();
-    }
-
-    private void menuSync() {
-//        new Thread(() -> serverController.getPicLibs()).start();
     }
 
     @Override

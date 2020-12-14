@@ -6,7 +6,7 @@
              android:background="#0099cc"
              tools:context=".activity.BrowserActivity">
 
-    <WebView
+    <com.tencent.smtt.sdk.WebView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/webview"/>

@@ -247,4 +247,19 @@ public class ServerController {
         return atomicBoolean.get();
     }
 
+    public boolean savePictureFile(int lid, @NonNull String pid, @NonNull File dst) {
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+        request(String.format(Locale.US, "/api/picture/get/%d/%s", lid, pid), (code, body, e) -> {
+            if (code == 200 && body != null) {
+                try {
+                    FileUtils.saveFileFromStream(body.byteStream(), dst);
+                    atomicBoolean.set(true);
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+        });
+        return atomicBoolean.get();
+    }
+
 }

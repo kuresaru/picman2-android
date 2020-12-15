@@ -1,6 +1,7 @@
 <resources>
     <!-- App Name -->
-    <string name="app_name">暮光小猿图片管理器2</string>
+    <string name="app_name_release">暮光小猿图片管理器2</string>
+    <string name="app_name_debug">dbg_暮光小猿图片管理器2</string>
 
     <!-- Activity Titles -->
     <string name="title_activity_browser">BrowserActivity</string>
@@ -29,6 +30,9 @@
     <string name="text_confirm">确定</string>
     <string name="text_delete">删除</string>
     <string name="text_search">搜索</string>
+    <string name="text_share">分享</string>
+    <string name="text_save_tmp">保存临时</string>
+    <string name="text_clear_save_tmp">清空并保存临时</string>
     <!-- tag text -->
     <string name="text_pid">pid</string>
     <string name="text_description">描述</string>

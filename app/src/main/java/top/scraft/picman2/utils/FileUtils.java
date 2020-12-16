@@ -47,4 +47,10 @@ public class FileUtils {
         outputStream.close();
     }
 
+    public static void copyFile(@NonNull File src, @NonNull File dst) throws IOException {
+        InputStream in = new FileInputStream(src);
+        FileUtils.saveFileFromStream(in, dst);
+        in.close();
+    }
+
 }

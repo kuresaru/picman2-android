@@ -21,6 +21,7 @@ import org.greenrobot.greendao.query.QueryBuilder;
 
 import java.io.File;
 import java.util.List;
+import java.util.Locale;
 
 import top.scraft.picman2.R;
 import top.scraft.picman2.activity.MainActivity;
@@ -154,8 +155,11 @@ public class SearchAdapter extends RecyclerView.Adapter<ImageViewHolder> {
                 intent.putExtra(Intent.EXTRA_STREAM, uri);
                 mainActivity.startActivity(Intent.createChooser(intent, "分享图片: ".concat(picture.getDescription())));
             });
-            dialog.setNegativeButton(R.string.text_save_tmp, null);
-            dialog.setNeutralButton(R.string.text_clear_save_tmp, null);
+            dialog.setNegativeButton(R.string.text_save_tmp, (d, w) -> saveTemp(picture.getPid()));
+            dialog.setNeutralButton(R.string.text_clear_save_tmp, (d, w) -> {
+                picmanStorage.getPictureStorage().clearTemp();
+                saveTemp(picture.getPid());
+            });
             dialog.show();
         });
     }
@@ -168,6 +172,15 @@ public class SearchAdapter extends RecyclerView.Adapter<ImageViewHolder> {
                 PictureLibraryDao.Properties.AppInternalLid
         ).where(PictureLibraryDao.Properties.Offline.eq(false));
         return lpmQuery.list();
+    }
+
+    private void saveTemp(String pid) {
+        if (picmanStorage.getPictureStorage().copyTemp(pid)) {
+            int count = picmanStorage.getPictureStorage().tempCount();
+            Toast.makeText(mainActivity, String.format(Locale.CHINESE, "保存成功, 现共%d张图片", count), Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(mainActivity, "保存失败", Toast.LENGTH_SHORT).show();
+        }
     }
 
 }

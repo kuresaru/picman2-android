@@ -8,7 +8,7 @@ import top.scraft.picman2.activity.adapter.viewholder.ImageViewHolder;
 import top.scraft.picman2.activity.PictureEditorActivity;
 
 @RequiredArgsConstructor
-public class ArrangeAdapter extends GalleryAdapter {
+public class ArrangeAdapter extends AbstractGalleryAdapter {
 
     private final ArrangeActivity arrangeActivity;
 

@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import lombok.Getter;
 import top.scraft.picman2.activity.adapter.viewholder.ImageViewHolder;
 
-public class GalleryAdapter extends RecyclerView.Adapter<ImageViewHolder> {
+public abstract class AbstractGalleryAdapter extends RecyclerView.Adapter<ImageViewHolder> {
 
     @Getter
     protected final ArrayList<String> picturePathList = new ArrayList<>();

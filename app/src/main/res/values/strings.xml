@@ -2,6 +2,8 @@
     <!-- App Name -->
     <string name="app_name_release">暮光小猿图片管理器2</string>
     <string name="app_name_debug">dbg_暮光小猿图片管理器2</string>
+    <string name="app_addpic_release">添加图片</string>
+    <string name="app_addpic_debug">dbg_添加图片</string>
 
     <!-- Activity Titles -->
     <string name="title_activity_browser">BrowserActivity</string>

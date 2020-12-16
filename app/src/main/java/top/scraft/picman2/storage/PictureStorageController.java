@@ -1,21 +1,25 @@
 package top.scraft.picman2.storage;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Environment;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+
+import top.scraft.picman2.utils.FileUtils;
 
 public class PictureStorageController {
 
     private static final String STORAGE_DIRECTORY_PICTURE_NAME = "Pictures";
     private static final String STORAGE_DIRECTORY_THUMB_NAME = "Thumbs";
-    private static final String STORAGE_DIRECTORY_TEMP_NAME = "Temp";
+
+    private static final String STORAGE_DIRECTORY_TEMP_NAME = "Picman2ShareTemp";
 
     private final Context context;
 
@@ -23,6 +27,7 @@ public class PictureStorageController {
         this.context = context;
     }
 
+    @Nullable
     private File getStorageDirectory() {
         return context.getExternalFilesDir(null);
     }
@@ -33,7 +38,8 @@ public class PictureStorageController {
      * @param file 要检查的目录
      * @return 检查后的目录
      */
-    private File checkDirectory(File file) {
+    @NonNull
+    private File checkDirectory(@NonNull File file) {
         if (!file.exists()) {
             if (!file.mkdirs()) {
                 Toast.makeText(context, "建立目录失败" + file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
@@ -44,23 +50,28 @@ public class PictureStorageController {
         return file;
     }
 
+    @NonNull
     private File getPictureDirectory() {
         return checkDirectory(new File(getStorageDirectory(), STORAGE_DIRECTORY_PICTURE_NAME));
     }
 
+    @NonNull
     private File getThumbDirectory() {
         return checkDirectory(new File(getStorageDirectory(), STORAGE_DIRECTORY_THUMB_NAME));
     }
 
+    @NonNull
     private File getTempDirectory() {
-        return checkDirectory(new File(getStorageDirectory(), STORAGE_DIRECTORY_TEMP_NAME));
+        return checkDirectory(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), STORAGE_DIRECTORY_TEMP_NAME));
     }
 
-    public File getThumbPath(String pid) {
+    @NonNull
+    public File getThumbPath(@NonNull String pid) {
         return new File(getThumbDirectory(), pid);
     }
 
-    public File getPicturePath(String pid) {
+    @NonNull
+    public File getPicturePath(@NonNull String pid) {
         return new File(getPictureDirectory(), pid);
     }
 
@@ -71,21 +82,46 @@ public class PictureStorageController {
      * @param pid 图片id
      * @return 是否保存成功
      */
-    public boolean savePicture(File src, String pid) {
+    public boolean savePicture(@NonNull File src, @NonNull String pid) {
         File dst = getPicturePath(pid);
-        try (InputStream in = new FileInputStream(src);
-             OutputStream out = new FileOutputStream(dst)) {
-            byte[] buf = new byte[4096];
-            int len;
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
-                out.flush();
-            }
+        try {
+            FileUtils.copyFile(src, dst);
             return true;
         } catch (IOException e) {
             e.printStackTrace();
         }
         return false;
+    }
+
+    /**
+     * 保存临时图片
+     *
+     * @param pid 图片id
+     * @return 是否成功
+     */
+    public boolean copyTemp(@NonNull String pid) {
+        File src = getPicturePath(pid);
+        File dst = new File(getTempDirectory(), pid);
+        try {
+            FileUtils.copyFile(src, dst);
+            Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+            intent.setData(Uri.fromFile(dst));
+            context.sendBroadcast(intent);
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void clearTemp() {
+        for (File file : getTempDirectory().listFiles()) {
+            file.delete();
+        }
+    }
+
+    public int tempCount() {
+        return getTempDirectory().list().length;
     }
 
 }

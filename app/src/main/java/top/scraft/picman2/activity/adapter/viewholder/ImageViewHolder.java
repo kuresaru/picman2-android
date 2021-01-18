@@ -1,5 +1,6 @@
 package top.scraft.picman2.activity.adapter.viewholder;
 
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
@@ -7,6 +8,7 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -44,6 +46,12 @@ public class ImageViewHolder extends RecyclerView.ViewHolder {
             getView().setAnimation(null);
             getView().setImageURI(Uri.fromFile(file));
         }
+    }
+
+    public void setImage(@NonNull Bitmap bitmap) {
+        getView().clearAnimation();
+        getView().setAnimation(null);
+        getView().setImageBitmap(bitmap);
     }
 
 }

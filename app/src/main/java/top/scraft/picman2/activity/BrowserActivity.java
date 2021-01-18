@@ -15,19 +15,16 @@ import top.scraft.picman2.R;
 import top.scraft.picman2.activity.webclient.LoginWebClient;
 import top.scraft.picman2.activity.webclient.PicmanChromeClient;
 import top.scraft.picman2.activity.webclient.PicmanWebClient;
-import top.scraft.picman2.server.ServerController;
 
 public class BrowserActivity extends AppCompatActivity {
 
     private WebView webView;
-    private ServerController serverController;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_browser);
-        serverController = ServerController.getInstance(this);
 
         Intent request = getIntent();
         Intent result = new Intent();
@@ -69,7 +66,6 @@ public class BrowserActivity extends AppCompatActivity {
         cookieManager.removeSessionCookies(null);
         cookieManager.flush();
         cookieManager.setAcceptCookie(true);
-        cookieManager.setCookie(serverController.getServer(), "JSESSIONID=".concat(serverController.getJsessionid()));
 
         webView.loadUrl(url);
 

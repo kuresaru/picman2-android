@@ -23,46 +23,38 @@ public class Picture {
     @NotNull
     private String pid;
     @NotNull
-    private Long createTime;
-    private String creator;
-    @NotNull
     private String description;
-    @NotNull
-    private Long fileSize;
+    @ToMany(referencedJoinProperty = "appInternalPid")
+    private List<PictureTag> tags;
     @NotNull
     private Integer height;
     @NotNull
     private Integer width;
     @NotNull
-    private Boolean valid;
+    private Long fileSize;
+    @NotNull
+    private Long createTime;
     @NotNull
     private Long lastModify;
-    @ToMany(referencedJoinProperty = "appInternalPid")
-    private List<PictureTag> tags;
     @ToMany
     @JoinEntity(entity = PiclibPictureMap.class, sourceProperty = "appInternalPid", targetProperty = "appInternalLid")
     private List<PictureLibrary> libraries;
-
-
     /** Used to resolve relations */
     @Generated(hash = 2040040024)
     private transient DaoSession daoSession;
     /** Used for active entity operations. */
     @Generated(hash = 220989104)
     private transient PictureDao myDao;
-    @Generated(hash = 1926985844)
-    public Picture(Long appInternalPid, @NotNull String pid, @NotNull Long createTime, String creator,
-            @NotNull String description, @NotNull Long fileSize, @NotNull Integer height, @NotNull Integer width,
-            @NotNull Boolean valid, @NotNull Long lastModify) {
+    @Generated(hash = 1203755750)
+    public Picture(Long appInternalPid, @NotNull String pid, @NotNull String description, @NotNull Integer height,
+            @NotNull Integer width, @NotNull Long fileSize, @NotNull Long createTime, @NotNull Long lastModify) {
         this.appInternalPid = appInternalPid;
         this.pid = pid;
-        this.createTime = createTime;
-        this.creator = creator;
         this.description = description;
-        this.fileSize = fileSize;
         this.height = height;
         this.width = width;
-        this.valid = valid;
+        this.fileSize = fileSize;
+        this.createTime = createTime;
         this.lastModify = lastModify;
     }
     @Generated(hash = 1602548376)
@@ -80,29 +72,11 @@ public class Picture {
     public void setPid(String pid) {
         this.pid = pid;
     }
-    public Long getCreateTime() {
-        return this.createTime;
-    }
-    public void setCreateTime(Long createTime) {
-        this.createTime = createTime;
-    }
-    public String getCreator() {
-        return this.creator;
-    }
-    public void setCreator(String creator) {
-        this.creator = creator;
-    }
     public String getDescription() {
         return this.description;
     }
     public void setDescription(String description) {
         this.description = description;
-    }
-    public Long getFileSize() {
-        return this.fileSize;
-    }
-    public void setFileSize(Long fileSize) {
-        this.fileSize = fileSize;
     }
     public Integer getHeight() {
         return this.height;
@@ -116,11 +90,17 @@ public class Picture {
     public void setWidth(Integer width) {
         this.width = width;
     }
-    public Boolean getValid() {
-        return this.valid;
+    public Long getFileSize() {
+        return this.fileSize;
     }
-    public void setValid(Boolean valid) {
-        this.valid = valid;
+    public void setFileSize(Long fileSize) {
+        this.fileSize = fileSize;
+    }
+    public Long getCreateTime() {
+        return this.createTime;
+    }
+    public void setCreateTime(Long createTime) {
+        this.createTime = createTime;
     }
     public Long getLastModify() {
         return this.lastModify;
@@ -128,7 +108,32 @@ public class Picture {
     public void setLastModify(Long lastModify) {
         this.lastModify = lastModify;
     }
-
+    /**
+     * To-many relationship, resolved on first access (and after reset).
+     * Changes to to-many relations are not persisted, make changes to the target entity.
+     */
+    @Generated(hash = 2033136060)
+    public List<PictureTag> getTags() {
+        if (tags == null) {
+            final DaoSession daoSession = this.daoSession;
+            if (daoSession == null) {
+                throw new DaoException("Entity is detached from DAO context");
+            }
+            PictureTagDao targetDao = daoSession.getPictureTagDao();
+            List<PictureTag> tagsNew = targetDao._queryPicture_Tags(appInternalPid);
+            synchronized (this) {
+                if (tags == null) {
+                    tags = tagsNew;
+                }
+            }
+        }
+        return tags;
+    }
+    /** Resets a to-many relationship, making the next get call to query for a fresh result. */
+    @Generated(hash = 404234)
+    public synchronized void resetTags() {
+        tags = null;
+    }
     /**
      * To-many relationship, resolved on first access (and after reset).
      * Changes to to-many relations are not persisted, make changes to the target entity.
@@ -193,32 +198,6 @@ public class Picture {
     public void __setDaoSession(DaoSession daoSession) {
         this.daoSession = daoSession;
         myDao = daoSession != null ? daoSession.getPictureDao() : null;
-    }
-    /**
-     * To-many relationship, resolved on first access (and after reset).
-     * Changes to to-many relations are not persisted, make changes to the target entity.
-     */
-    @Generated(hash = 2033136060)
-    public List<PictureTag> getTags() {
-        if (tags == null) {
-            final DaoSession daoSession = this.daoSession;
-            if (daoSession == null) {
-                throw new DaoException("Entity is detached from DAO context");
-            }
-            PictureTagDao targetDao = daoSession.getPictureTagDao();
-            List<PictureTag> tagsNew = targetDao._queryPicture_Tags(appInternalPid);
-            synchronized (this) {
-                if (tags == null) {
-                    tags = tagsNew;
-                }
-            }
-        }
-        return tags;
-    }
-    /** Resets a to-many relationship, making the next get call to query for a fresh result. */
-    @Generated(hash = 404234)
-    public synchronized void resetTags() {
-        tags = null;
     }
 
 }

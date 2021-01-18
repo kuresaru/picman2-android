@@ -16,7 +16,6 @@
     <string name="menu_main_login">登录</string>
     <string name="menu_main_logout">退出登录</string>
     <string name="menu_main_settings">设置</string>
-    <string name="menu_main_ping">测试与服务器的连接</string>
 
     <!-- Preference Titles -->
     <string name="settings_base">基本设置</string>

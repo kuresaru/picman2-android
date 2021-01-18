@@ -19,16 +19,17 @@ public class PictureLibrary {
 
     @Id
     private Long appInternalLid;
-    private Integer lid;
+    private Long lid;
     @NotNull
     private String name;
-    private String owner;
+    @NotNull
+    private Long lastUpdate;
+    private int maxPictureCount;
     @ToMany
     @JoinEntity(entity = PiclibPictureMap.class, sourceProperty = "appInternalLid", targetProperty = "appInternalPid")
     private List<Picture> pictures;
-    @NotNull
-    private Long lastUpdate;
     private boolean offline;
+    private boolean readonly;
 
 
     /** Used to resolve relations */
@@ -37,18 +38,19 @@ public class PictureLibrary {
     /** Used for active entity operations. */
     @Generated(hash = 891498684)
     private transient PictureLibraryDao myDao;
-    @Generated(hash = 1566268425)
-    public PictureLibrary(Long appInternalLid, Integer lid, @NotNull String name, String owner, @NotNull Long lastUpdate,
-            boolean offline) {
+    @Generated(hash = 1073290780)
+    public PictureLibrary() {
+    }
+    @Generated(hash = 1830949660)
+    public PictureLibrary(Long appInternalLid, Long lid, @NotNull String name, @NotNull Long lastUpdate,
+            int maxPictureCount, boolean offline, boolean readonly) {
         this.appInternalLid = appInternalLid;
         this.lid = lid;
         this.name = name;
-        this.owner = owner;
         this.lastUpdate = lastUpdate;
+        this.maxPictureCount = maxPictureCount;
         this.offline = offline;
-    }
-    @Generated(hash = 1073290780)
-    public PictureLibrary() {
+        this.readonly = readonly;
     }
     public Long getAppInternalLid() {
         return this.appInternalLid;
@@ -56,10 +58,10 @@ public class PictureLibrary {
     public void setAppInternalLid(Long appInternalLid) {
         this.appInternalLid = appInternalLid;
     }
-    public Integer getLid() {
+    public Long getLid() {
         return this.lid;
     }
-    public void setLid(Integer lid) {
+    public void setLid(Long lid) {
         this.lid = lid;
     }
     public String getName() {
@@ -67,12 +69,6 @@ public class PictureLibrary {
     }
     public void setName(String name) {
         this.name = name;
-    }
-    public String getOwner() {
-        return this.owner;
-    }
-    public void setOwner(String owner) {
-        this.owner = owner;
     }
     public boolean getOffline() {
         return this.offline;
@@ -150,6 +146,18 @@ public class PictureLibrary {
     }
     public void setLastUpdate(Long lastUpdate) {
         this.lastUpdate = lastUpdate;
+    }
+    public int getMaxPictureCount() {
+        return this.maxPictureCount;
+    }
+    public void setMaxPictureCount(int maxPictureCount) {
+        this.maxPictureCount = maxPictureCount;
+    }
+    public boolean getReadonly() {
+        return this.readonly;
+    }
+    public void setReadonly(boolean readonly) {
+        this.readonly = readonly;
     }
 
 }

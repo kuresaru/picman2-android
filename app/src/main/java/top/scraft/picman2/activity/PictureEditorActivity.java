@@ -18,13 +18,22 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputLayout;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import top.scraft.picman2.R;
 import top.scraft.picman2.activity.adapter.PiclibSpinnerAdapter;
+import top.scraft.picman2.server.ServerController;
 import top.scraft.picman2.storage.PicmanStorage;
+import top.scraft.picman2.storage.PictureStorageController;
 import top.scraft.picman2.storage.dao.PiclibPictureMap;
 import top.scraft.picman2.storage.dao.Picture;
 import top.scraft.picman2.storage.dao.PictureLibrary;
@@ -34,10 +43,7 @@ import top.scraft.picman2.storage.dao.gen.PiclibPictureMapDao;
 import top.scraft.picman2.storage.dao.gen.PictureDao;
 import top.scraft.picman2.storage.dao.gen.PictureTagDao;
 import top.scraft.picman2.utils.FileUtils;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import top.scraft.picman2.utils.Utils;
 
 public class PictureEditorActivity extends AppCompatActivity {
 
@@ -51,7 +57,7 @@ public class PictureEditorActivity extends AppCompatActivity {
     private LayoutInflater layoutInflater;
     private File imageFile = null;
     private String pid = null;
-    private final ArrayList<String> tagList = new ArrayList<>();
+    private final Set<String> tagList = new HashSet<>();
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -124,12 +130,29 @@ public class PictureEditorActivity extends AppCompatActivity {
         }
         PictureLibrary library = (PictureLibrary) piclibSelector.getSelectedItem();
 
-        PicmanStorage picmanStorage = PicmanStorage.getInstance(getApplicationContext());
-        DaoSession daoSession = picmanStorage.getDaoSession();
-        PictureDao pDao = daoSession.getPictureDao();
-        PictureTagDao tDao = daoSession.getPictureTagDao();
-        PiclibPictureMapDao lpmDao = daoSession.getPiclibPictureMapDao();
-        if (library.getOffline()) {
+        new Thread(() -> {
+            PicmanStorage picmanStorage = PicmanStorage.getInstance(getApplicationContext());
+            DaoSession daoSession = picmanStorage.getDaoSession();
+            PictureDao pDao = daoSession.getPictureDao();
+            PictureTagDao tDao = daoSession.getPictureTagDao();
+            PiclibPictureMapDao lpmDao = daoSession.getPiclibPictureMapDao();
+
+            // 如果离线直接保存本地 如果在线先上传 成功后再保存本地
+            if (!library.getOffline()) {
+                // online
+                ServerController serverController = ServerController.getInstance(getApplicationContext());
+                Boolean needUpload = serverController.updatePictureMeta(library.getLid(), pid, description, tagList);
+                if (needUpload == null) {
+                    Utils.toastThread(this, "服务器请求失败");
+                    return;
+                }
+                if (needUpload) {
+                    if (!serverController.uploadPicture(library.getLid(), pid, imageFile)) {
+                        Utils.toastThread(this, "上传图片失败");
+                        return;
+                    }
+                }
+            }
             Picture oldRecord = pDao.queryBuilder().where(PictureDao.Properties.Pid.eq(pid)).unique();
             boolean newPicture = oldRecord == null;
             if (newPicture) {
@@ -140,7 +163,6 @@ public class PictureEditorActivity extends AppCompatActivity {
                 Bitmap bmp = BitmapFactory.decodeFile(imageFile.getAbsolutePath()); // TODO gif
                 oldRecord.setWidth(bmp.getWidth());
                 oldRecord.setHeight(bmp.getHeight());
-                oldRecord.setValid(true);
             }
             oldRecord.setDescription(description);
             oldRecord.setLastModify(System.currentTimeMillis() / 1000);
@@ -163,22 +185,19 @@ public class PictureEditorActivity extends AppCompatActivity {
             lpMap.setAppInternalPid(oldRecord.getAppInternalPid());
             lpmDao.insert(lpMap);
             // 保存图片文件
-            if (newPicture) {
-                if (picmanStorage.getPictureStorage().savePicture(imageFile, pid)) {
-                    Toast.makeText(this, "图片已保存", Toast.LENGTH_SHORT).show();
+            PictureStorageController storage = picmanStorage.getPictureStorage();
+            if (!storage.getPicturePath(pid).exists()) {
+                if (storage.savePicture(imageFile, pid)) {
+                    Utils.toastThread(this, "图片已保存");
                 } else {
-                    Toast.makeText(this, "保存失败, 请检查存储权限和存储空间", Toast.LENGTH_LONG).show();
-                    oldRecord.setValid(false);
+                    Utils.toastThread(this, "保存失败, 请检查存储权限和存储空间");
                     oldRecord.update();
                 }
             } else {
-                Toast.makeText(this, "图片已更新", Toast.LENGTH_SHORT).show();
+                Utils.toastThread(this, "图片已更新");
             }
-            finish();
-        } else {
-            // TODO
-            Toast.makeText(this, "// TODO 在线提交", Toast.LENGTH_LONG).show();
-        }
+            runOnUiThread(this::finish);
+        }).start();
     }
 
     private void loadImage() {

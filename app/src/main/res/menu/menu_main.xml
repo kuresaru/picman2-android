@@ -33,10 +33,5 @@
           android:title="@string/menu_main_settings"
           app:showAsAction="never"/>
 
-    <item android:id="@+id/menu_main_ping"
-          android:orderInCategory="5"
-          android:title="@string/menu_main_ping"
-          app:showAsAction="never"/>
-
 </menu>
 

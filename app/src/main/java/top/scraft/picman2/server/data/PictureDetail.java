@@ -7,8 +7,6 @@ import lombok.Data;
 @Data
 public class PictureDetail {
 
-    private int accessLid;
-    private String pid;
     private String description;
     private Set<String> tags;
     private long fileSize;
@@ -16,6 +14,6 @@ public class PictureDetail {
     private int height;
     private long createTime;
     private long lastModify;
-    private String creator;
+    private boolean valid;
 
 }

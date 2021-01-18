@@ -36,9 +36,9 @@ import java.util.Set;
 import top.scraft.picman2.R;
 import top.scraft.picman2.activity.adapter.SearchAdapter;
 import top.scraft.picman2.server.ServerController;
-import top.scraft.picman2.server.data.PicLibDetail;
+import top.scraft.picman2.server.data.LibDetails;
+import top.scraft.picman2.server.data.LibContentDetails;
 import top.scraft.picman2.server.data.PictureDetail;
-import top.scraft.picman2.server.data.UserDetail;
 import top.scraft.picman2.storage.PicmanStorage;
 import top.scraft.picman2.storage.dao.PiclibPictureMap;
 import top.scraft.picman2.storage.dao.Picture;
@@ -66,7 +66,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private ServerController serverController;
     private PicmanStorage picmanStorage;
-    private UserDetail userDetail = null;
     private boolean syncRotating = false;
 
     @Override
@@ -99,126 +98,135 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             logoutMenuItem.setVisible(false);
         }
         new Thread(() -> {
-            boolean serverValid = serverController.test();
-            if (serverValid) {
-                userDetail = serverController.getUserDetail();
-                if (userDetail != null) {
+            if (serverController.updateState()) {
+                if (serverController.getState().login) {
                     runOnUiThread(() -> {
-                        if (userDetail.isLoggedIn()) {
-                            new Thread(() -> {
-                                List<PicLibDetail> libDetails = serverController.getPiclibs();
-                                DaoSession daoSession = picmanStorage.getDaoSession();
-                                PictureLibraryDao lDao = daoSession.getPictureLibraryDao();
-                                PictureDao pDao = daoSession.getPictureDao();
-                                PictureTagDao tDao = daoSession.getPictureTagDao();
-                                PiclibPictureMapDao lpmDao = daoSession.getPiclibPictureMapDao();
-                                for (PicLibDetail picLibDetail : libDetails) {
-                                    PictureLibrary library = lDao.queryBuilder().where(PictureLibraryDao.Properties.Lid.eq(picLibDetail.getLid())).unique();
-                                    if (library != null && Long.valueOf(picLibDetail.getLastUpdate()).equals(library.getLastUpdate())) {
+                        new Thread(() -> {
+                            // 取图库信息, 初始化本地dao
+                            List<LibDetails> libDetailsListServer = serverController.getPiclibs();
+                            DaoSession daoSession = picmanStorage.getDaoSession();
+                            PictureLibraryDao lDao = daoSession.getPictureLibraryDao();
+                            PictureDao pDao = daoSession.getPictureDao();
+                            PictureTagDao tDao = daoSession.getPictureTagDao();
+                            PiclibPictureMapDao lpmDao = daoSession.getPiclibPictureMapDao();
+                            // 循环所有服务器上的图库
+                            for (LibDetails libDetailsServer : libDetailsListServer) {
+                                // 找本地对应的图库
+                                PictureLibrary libraryLocal = lDao.queryBuilder().where(PictureLibraryDao.Properties.Lid.eq(libDetailsServer.getLid())).unique();
+                                if (libraryLocal != null && Long.valueOf(libDetailsServer.getLastUpdate()).equals(libraryLocal.getLastUpdate())) {
+                                    // 本地图库是最新时跳过
+                                    continue;
+                                }
+                                // 不是最新 更新本地图库
+                                runOnUiThread(() -> Toast.makeText(MainActivity.this, "更新图库 " + libDetailsServer.getName(), Toast.LENGTH_SHORT).show());
+                                // 取服务器图库内容
+                                List<LibContentDetails> libraryContentDetailsServer = serverController.getLibraryContentDetails(libDetailsServer.getLid());
+                                // 本地不存在的图库先新建
+                                if (libraryLocal == null) {
+                                    libraryLocal = new PictureLibrary();
+                                    libraryLocal.setLid(libDetailsServer.getLid());
+                                    libraryLocal.setName(libDetailsServer.getName());
+                                    libraryLocal.setLastUpdate(0L);
+                                    lDao.save(libraryLocal);
+                                }
+                                // 更新本地图片信息 (写入图片修改时间大于本地图库更新时间的记录)
+                                List<String> serverValidPicturePids = new ArrayList<>();
+                                long time = libraryLocal.getLastUpdate();
+                                for (LibContentDetails libContentServer : libraryContentDetailsServer) {
+                                    if (!libContentServer.isValid()) {
+                                        // 跳过服务器上无效的记录
                                         continue;
                                     }
-                                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "更新图库 " + picLibDetail.getName(), Toast.LENGTH_SHORT).show());
-                                    List<PictureDetail> libContent = serverController.getPiclibContent(picLibDetail.getLid());
-                                    // 本地不存在的图库先新建
-                                    if (library == null) {
-                                        library = new PictureLibrary();
-                                        library.setLid(picLibDetail.getLid());
-                                        library.setName(picLibDetail.getName());
-                                        library.setOwner(picLibDetail.getOwner());
-                                        library.setLastUpdate(0L);
-                                        lDao.save(library);
-                                    }
-                                    // 更新本地图片信息 (写入图片修改时间大于本地图库更新时间的记录)
-                                    List<String> contentPids = new ArrayList<>();
-                                    long time = library.getLastUpdate();
-                                    for (PictureDetail p : libContent) {
-                                        String pid = p.getPid();
-                                        contentPids.add(pid);
-                                        if (p.getLastModify() > time) {
-                                            Picture picture = pDao.queryBuilder().where(PictureDao.Properties.Pid.eq(pid)).unique();
-                                            if (picture == null) {
-                                                picture = new Picture();
-                                                picture.setPid(pid);
-                                                picture.setCreateTime(p.getCreateTime());
-                                                picture.setFileSize(p.getFileSize());
-                                                picture.setWidth(p.getWidth());
-                                                picture.setHeight(p.getHeight());
-                                                picture.setValid(false);
-                                            }
-                                            picture.setCreator(p.getCreator());
-                                            picture.setDescription(p.getDescription());
-                                            picture.setLastModify(p.getLastModify());
-                                            pDao.insertOrReplace(picture);
-                                            // 删除旧Tag
-                                            tDao.queryBuilder()
-                                                    .where(PictureTagDao.Properties.AppInternalPid.eq(picture.getAppInternalPid()))
-                                                    .buildDelete().executeDeleteWithoutDetachingEntities();
-                                            // 写入新Tag
-                                            for (String tag : p.getTags()) {
-                                                PictureTag t = new PictureTag();
-                                                t.setAppInternalPid(picture.getAppInternalPid());
-                                                t.setTag(tag);
-                                                tDao.insert(t);
-                                            }
-                                            // 检查并加入本地图库中图片映射
-                                            if (lpmDao.queryBuilder().where(
-                                                    PiclibPictureMapDao.Properties.AppInternalLid.eq(library.getAppInternalLid()),
-                                                    PiclibPictureMapDao.Properties.AppInternalPid.eq(picture.getAppInternalPid())
-                                            ).count() == 0) {
-                                                PiclibPictureMap lpMap = new PiclibPictureMap();
-                                                lpMap.setAppInternalLid(library.getAppInternalLid());
-                                                lpMap.setAppInternalPid(picture.getAppInternalPid());
-                                                lpmDao.insert(lpMap);
-                                            }
+                                    String pid = libContentServer.getPid();
+                                    serverValidPicturePids.add(pid);
+                                    // 找到最近刚更新过的图片记录
+                                    if (libContentServer.getLastModify() > time) {
+                                        // 找到本地对应的图片记录
+                                        Picture pictureLocal = pDao.queryBuilder().where(PictureDao.Properties.Pid.eq(pid)).unique();
+                                        // 取服务器图片信息
+                                        PictureDetail pictureServer = serverController.getPictureMeta(pid);
+                                        // 本地不存在先新建
+                                        if (pictureLocal == null) {
+                                            pictureLocal = new Picture();
+                                            pictureLocal.setPid(pid);
+                                            pictureLocal.setCreateTime(pictureServer.getCreateTime());
+                                            pictureLocal.setFileSize(pictureServer.getFileSize());
+                                            pictureLocal.setHeight(pictureServer.getHeight());
+                                            pictureLocal.setWidth(pictureServer.getWidth());
+                                        }
+                                        // 更新图片信息
+                                        pictureLocal.setDescription(pictureServer.getDescription());
+                                        pictureLocal.setLastModify(pictureServer.getLastModify());
+                                        pDao.insertOrReplace(pictureLocal);
+                                        // 删除旧Tag
+                                        tDao.queryBuilder()
+                                                .where(PictureTagDao.Properties.AppInternalPid.eq(pictureLocal.getAppInternalPid()))
+                                                .buildDelete().executeDeleteWithoutDetachingEntities();
+                                        // 写入新Tag
+                                        for (String tag : pictureServer.getTags()) {
+                                            PictureTag t = new PictureTag();
+                                            t.setAppInternalPid(pictureLocal.getAppInternalPid());
+                                            t.setTag(tag);
+                                            tDao.insert(t);
+                                        }
+                                        // 检查并加入本地图库中图片映射
+                                        if (lpmDao.queryBuilder().where(
+                                                PiclibPictureMapDao.Properties.AppInternalLid.eq(libraryLocal.getAppInternalLid()),
+                                                PiclibPictureMapDao.Properties.AppInternalPid.eq(pictureLocal.getAppInternalPid())
+                                        ).count() == 0) {
+                                            PiclibPictureMap lpMap = new PiclibPictureMap();
+                                            lpMap.setAppInternalLid(libraryLocal.getAppInternalLid());
+                                            lpMap.setAppInternalPid(pictureLocal.getAppInternalPid());
+                                            lpmDao.insert(lpMap);
                                         }
                                     }
-                                    // 删除本地图库中需要删除的图片映射 (只删映射!!)
-                                    ArrayList<Long> lpmDeleteImid = new ArrayList<>();
-                                    QueryBuilder<PiclibPictureMap> lpmDeleteQuery = lpmDao.queryBuilder();
-                                    lpmDeleteQuery.where(
-                                            PiclibPictureMapDao.Properties.AppInternalLid.eq(library.getAppInternalLid())
-                                    ).join(
-                                            PiclibPictureMapDao.Properties.AppInternalPid,
-                                            Picture.class,
-                                            PictureDao.Properties.AppInternalPid
-                                    ).where(
-                                            PictureDao.Properties.Pid.notIn(contentPids)
-                                    );
-                                    try (CloseableListIterator<PiclibPictureMap> iterator = lpmDeleteQuery.listIterator()) {
-                                        while (iterator.hasNext()) {
-                                            lpmDeleteImid.add(iterator.next().getAppInternalMapId());
-                                        }
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                    lpmDao.queryBuilder().where(PiclibPictureMapDao.Properties.AppInternalMapId.in(lpmDeleteImid))
-                                            .buildDelete().executeDeleteWithoutDetachingEntities();
-                                    // 更新本地图库更新时间
-                                    library.setLastUpdate(picLibDetail.getLastUpdate());
-                                    library.update();
                                 }
-                                runOnUiThread(() -> setSyncMenuItemRotation(false));
-                            }).start();
-                        } else {
-                            Toast.makeText(this, "未登录", Toast.LENGTH_SHORT).show();
-                            setSyncMenuItemRotation(false);
-                        }
+                                // 找到本地存在但是服务器不存在(需要删除)的映射id
+                                ArrayList<Long> lpmDeleteImid = new ArrayList<>();
+                                QueryBuilder<PiclibPictureMap> lpmDeleteQuery = lpmDao.queryBuilder();
+                                lpmDeleteQuery.where(
+                                        PiclibPictureMapDao.Properties.AppInternalLid.eq(libraryLocal.getAppInternalLid())
+                                ).join(
+                                        PiclibPictureMapDao.Properties.AppInternalPid,
+                                        Picture.class,
+                                        PictureDao.Properties.AppInternalPid
+                                ).where(
+                                        PictureDao.Properties.Pid.notIn(serverValidPicturePids)
+                                );
+                                // 删除本地图库中需要删除的图片映射 (只删映射!!)
+                                try (CloseableListIterator<PiclibPictureMap> iterator = lpmDeleteQuery.listIterator()) {
+                                    while (iterator.hasNext()) {
+                                        lpmDeleteImid.add(iterator.next().getAppInternalMapId());
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                lpmDao.queryBuilder().where(PiclibPictureMapDao.Properties.AppInternalMapId.in(lpmDeleteImid))
+                                        .buildDelete().executeDeleteWithoutDetachingEntities();
+                                // 更新本地图库更新时间
+                                libraryLocal.setLastUpdate(libDetailsServer.getLastUpdate());
+                                libraryLocal.update();
+                            }
+                            runOnUiThread(() -> setSyncMenuItemRotation(false));
+                        }).start();
                         if (loginMenuItem != null) {
-                            systemMenuItem.setVisible(userDetail.isAdmin());
-                            loginMenuItem.setVisible((!userDetail.isLoggedIn()) && (userDetail.getSacLoginUrl() != null));
-                            logoutMenuItem.setVisible(userDetail.isLoggedIn());
+                            systemMenuItem.setVisible(serverController.getUser().isAdmin());
+//                            logoutMenuItem.setVisible(true); // TODO
                         }
                     });
                 } else {
                     runOnUiThread(() -> {
-                        Toast.makeText(MainActivity.this, "未知服务器错误", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, serverController.getState().message, Toast.LENGTH_SHORT).show();
                         setSyncMenuItemRotation(false);
+                        if (loginMenuItem != null) {
+                            loginMenuItem.setVisible(true);
+                        }
                     });
                 }
             } else {
                 // 服务器不可用
                 runOnUiThread(() -> {
-                    Toast.makeText(MainActivity.this, serverController.getTestResult(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, serverController.getState().message, Toast.LENGTH_SHORT).show();
                     setSyncMenuItemRotation(false);
                 });
             }
@@ -286,11 +294,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (requestCode == ACTIVITY_RESULT_LOGIN) {
             if (resultCode == Activity.RESULT_OK && data != null) {
-                String sact = data.getStringExtra("SACT");
-                if (sact != null) {
+                String host = data.getStringExtra("HOST");
+                String pmst = data.getStringExtra("PMST");
+//                Log.d("picman_pmst", pmst);
+                if (pmst != null) {
                     Toast.makeText(this, "登录成功", Toast.LENGTH_SHORT).show();
-                    serverController.setSact(sact);
-                    System.out.println(sact);
+                    serverController.setPmst(host, pmst);
                     syncMetadata();
                 }
             }
@@ -316,16 +325,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.menu_main_login) {
-            if ("testuser".equals(userDetail.getSacLoginUrl())) {
-                Toast.makeText(this, "testuser", Toast.LENGTH_SHORT).show();
-                serverController.setSact("0123456789abcdef0123456789abcdef");
-                syncMetadata();
-            } else {
-                Intent intent = new Intent(this, BrowserActivity.class);
-                intent.putExtra("URL", userDetail.getSacLoginUrl());
-                intent.putExtra("TYPE", "LOGIN");
-                startActivityForResult(intent, ACTIVITY_RESULT_LOGIN);
-            }
+            // TODO
+            String loginUrl = serverController.getServer().concat("/login");
+            Intent intent = new Intent(this, BrowserActivity.class);
+            intent.putExtra("URL", loginUrl);
+            intent.putExtra("TYPE", "LOGIN");
+            startActivityForResult(intent, ACTIVITY_RESULT_LOGIN);
         } else if (id == R.id.menu_main_logout) {
             new Thread(() -> {
                 serverController.logout();
@@ -333,13 +338,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }).start();
         } else if (id == R.id.menu_main_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
-        } else if (id == R.id.menu_main_ping) {
-            Toast.makeText(this, "正在测试", Toast.LENGTH_SHORT).show();
-            new Thread(() -> {
-                serverController.test();
-                runOnUiThread(() -> Toast.makeText(MainActivity.this, serverController.getTestResult(), Toast.LENGTH_SHORT).show());
-            }).start();
         } else if (id == R.id.menu_main_sync) {
+            // TODO
         } else if (id == R.id.menu_main_piclib) {
             startActivity(new Intent(this, PicLibManagerActivity.class));
         } else if (id == R.id.menu_main_system) {

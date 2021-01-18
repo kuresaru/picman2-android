@@ -1,6 +1,11 @@
 package top.scraft.picman2.activity.adapter;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Movie;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.view.LayoutInflater;
@@ -70,12 +75,33 @@ public class SearchAdapter extends RecyclerView.Adapter<ImageViewHolder> {
                 File pf = picmanStorage.getPictureStorage().getPicturePath(picture.getPid());
                 if (pf.exists()) {
                     // TODO 生成
+                    Bitmap src;
+                    if (pf.getName().endsWith(".gif")) {
+                        Movie movie = Movie.decodeFile(pf.getAbsolutePath());
+                        if (movie == null || movie.width() < 1 || movie.height() < 1) {
+                            return;
+                        }
+                        src = Bitmap.createBitmap(movie.width(), movie.height(), Bitmap.Config.ARGB_8888);
+                        Canvas canvas = new Canvas(src);
+                        movie.draw(canvas, 0, 0);
+                        canvas.save();
+                    } else {
+                        src = BitmapFactory.decodeFile(pf.getAbsolutePath());
+                    }
+                    if (src != null && src.getWidth() > 0 && src.getHeight() > 0) {
+                        Bitmap dst = ThumbnailUtils.extractThumbnail(src, 200, 200);
+                        src.recycle();
+                        mainActivity.runOnUiThread(() -> {
+                            holder.setImage(dst);
+                            setGalleryImageClick(holder, picture);
+                        });
+                    }
                 } else {
                     List<PiclibPictureMap> accessLibs = getPictureAccessLibIlid(picture.getAppInternalPid());
                     boolean saved = false;
                     for (PiclibPictureMap accessLib : accessLibs) {
                         PictureLibrary lib = picmanStorage.getDaoSession().getPictureLibraryDao().load(accessLib.getAppInternalLid());
-                        if (serverController.savePictureThumb(lib.getLid(), picture.getPid(), thumb)) {
+                        if (serverController.savePictureFile(lib.getLid(), picture.getPid(), thumb, true)) {
                             saved = true;
                             break;
                         }
@@ -88,7 +114,7 @@ public class SearchAdapter extends RecyclerView.Adapter<ImageViewHolder> {
                     }
                 }
             }).start();
-            holder.setImage(null);
+            holder.setImage((File) null);
         }
     }
 
@@ -114,7 +140,7 @@ public class SearchAdapter extends RecyclerView.Adapter<ImageViewHolder> {
                     boolean saved = false;
                     for (PiclibPictureMap accessLib : accessLibs) {
                         PictureLibrary lib = picmanStorage.getDaoSession().getPictureLibraryDao().load(accessLib.getAppInternalLid());
-                        if (serverController.savePictureFile(lib.getLid(), picture.getPid(), file)) {
+                        if (serverController.savePictureFile(lib.getLid(), picture.getPid(), file, false)) {
                             saved = true;
                             break;
                         }

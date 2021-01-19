@@ -325,7 +325,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.menu_main_login) {
-            // TODO
             String loginUrl = serverController.getServer().concat("/login");
             Intent intent = new Intent(this, BrowserActivity.class);
             intent.putExtra("URL", loginUrl);

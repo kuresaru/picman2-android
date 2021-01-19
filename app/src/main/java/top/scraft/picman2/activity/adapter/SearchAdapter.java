@@ -74,7 +74,6 @@ public class SearchAdapter extends RecyclerView.Adapter<ImageViewHolder> {
             new Thread(() -> {
                 File pf = picmanStorage.getPictureStorage().getPicturePath(picture.getPid());
                 if (pf.exists()) {
-                    // TODO 生成
                     Bitmap src;
                     if (pf.getName().endsWith(".gif")) {
                         Movie movie = Movie.decodeFile(pf.getAbsolutePath());
@@ -134,7 +133,6 @@ public class SearchAdapter extends RecyclerView.Adapter<ImageViewHolder> {
                 imageView.setImageURI(Uri.fromFile(file));
             } else {
                 Toast.makeText(mainActivity, "正在下载原图", Toast.LENGTH_SHORT).show();
-                // TODO 加载动画
                 new Thread(() -> {
                     List<PiclibPictureMap> accessLibs = getPictureAccessLibIlid(picture.getAppInternalPid());
                     boolean saved = false;
@@ -168,7 +166,6 @@ public class SearchAdapter extends RecyclerView.Adapter<ImageViewHolder> {
             final AlertDialog.Builder dialog = new AlertDialog.Builder(mainActivity);
             dialog.setTitle(picture.getDescription());
             dialog.setView(contentView);
-            // TODO 分享
             dialog.setPositiveButton(R.string.text_share, (d, w) -> {
                 final Uri uri;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {

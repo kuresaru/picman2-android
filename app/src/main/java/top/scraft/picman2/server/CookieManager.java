@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import okhttp3.Cookie;
@@ -24,13 +25,7 @@ public class CookieManager implements CookieJar {
         String hPmst = sharedPreferences.getString("PMST_host", null);
         String vPmst = sharedPreferences.getString("PMST_val", null);
         if (hPmst != null && vPmst != null) {
-            mainHost = hPmst;
-            get(hPmst).add(new Cookie.Builder()
-                    .domain(hPmst)
-                    .name("PMST")
-                    .value(vPmst)
-                    .expiresAt(System.currentTimeMillis() + 2592000000L)
-                    .build());
+            setPmst(hPmst, vPmst);
         }
     }
 
@@ -66,10 +61,16 @@ public class CookieManager implements CookieJar {
     }
 
     void setPmst(String host, String pmst) {
-//        Log.d("pmst", String.format("host=%s,pmst=%s", host, pmst));
-        // TODO 刚登录不能实时生效
         mainHost = host;
-        get(host).add(new Cookie.Builder()
+        CookieSet cookieSet = get(host);
+        Iterator<Cookie> itr = cookieSet.iterator();
+        while (itr.hasNext()) {
+            Cookie c = itr.next();
+            if (c.name().equalsIgnoreCase("PMST")) {
+                itr.remove();
+            }
+        }
+        cookieSet.add(new Cookie.Builder()
                 .domain(host).name("PMST")
                 .value(pmst)
                 .expiresAt(System.currentTimeMillis() + 2592000000L)

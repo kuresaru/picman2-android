@@ -24,7 +24,6 @@ public class PictureLibrary {
     private String name;
     @NotNull
     private Long lastUpdate;
-    private int maxPictureCount;
     @ToMany
     @JoinEntity(entity = PiclibPictureMap.class, sourceProperty = "appInternalLid", targetProperty = "appInternalPid")
     private List<Picture> pictures;
@@ -41,14 +40,13 @@ public class PictureLibrary {
     @Generated(hash = 1073290780)
     public PictureLibrary() {
     }
-    @Generated(hash = 1830949660)
-    public PictureLibrary(Long appInternalLid, Long lid, @NotNull String name, @NotNull Long lastUpdate,
-            int maxPictureCount, boolean offline, boolean readonly) {
+    @Generated(hash = 1525643442)
+    public PictureLibrary(Long appInternalLid, Long lid, @NotNull String name, @NotNull Long lastUpdate, boolean offline,
+            boolean readonly) {
         this.appInternalLid = appInternalLid;
         this.lid = lid;
         this.name = name;
         this.lastUpdate = lastUpdate;
-        this.maxPictureCount = maxPictureCount;
         this.offline = offline;
         this.readonly = readonly;
     }
@@ -146,12 +144,6 @@ public class PictureLibrary {
     }
     public void setLastUpdate(Long lastUpdate) {
         this.lastUpdate = lastUpdate;
-    }
-    public int getMaxPictureCount() {
-        return this.maxPictureCount;
-    }
-    public void setMaxPictureCount(int maxPictureCount) {
-        this.maxPictureCount = maxPictureCount;
     }
     public boolean getReadonly() {
         return this.readonly;

@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import lombok.Getter;
+import okhttp3.FormBody;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -216,6 +217,42 @@ public class ServerController {
             }
         });
         return result.get();
+    }
+
+    /**
+     * 创建图库
+     *
+     * @param name
+     * @return
+     */
+    @Nullable
+    @EverythingIsNonNull
+    public Result<LibDetails> createLibrary(String name) {
+        String api = "/api/lib/?name=" + name;
+        RequestBody body = new FormBody.Builder().build();
+        return request(requestBuilder(api).post(body), new TypeToken<Result<LibDetails>>() {
+        }.getType());
+    }
+
+    /**
+     * 删除图库
+     *
+     * @param lid
+     * @return 错误信息, <tt>null</tt>为成功
+     */
+    @Nullable
+    @EverythingIsNonNull
+    public String deleteLibrary(long lid) {
+        String api = String.format(Locale.ENGLISH, "/api/lib/%d", lid);
+        Result<Object> result = request(requestBuilder(api).delete(), new TypeToken<Result<Object>>() {
+        }.getType());
+        if (result != null) {
+            if (result.getCode() == 200) {
+                return null;
+            }
+            return result.getMessage();
+        }
+        return "网络连接失败";
     }
 
     public List<LibContentDetails> getLibraryContentDetails(long lid) {

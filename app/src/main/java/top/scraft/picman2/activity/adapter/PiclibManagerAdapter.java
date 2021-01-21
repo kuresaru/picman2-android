@@ -13,6 +13,7 @@ import com.google.android.material.tabs.TabLayout;
 import lombok.RequiredArgsConstructor;
 import top.scraft.picman2.R;
 import top.scraft.picman2.activity.PicLibManagerActivity;
+import top.scraft.picman2.server.ServerController;
 import top.scraft.picman2.storage.PicmanStorage;
 import top.scraft.picman2.storage.dao.PictureLibrary;
 
@@ -131,7 +132,15 @@ public class PiclibManagerAdapter extends BaseAdapter {
                             confirm.setTitle("删除图库");
                             confirm.setMessage(String.format("确认删除图库[%s]?", library.getName()));
                             confirm.setNegativeButton(R.string.text_cancel, (d, w) -> alertDialog.show());
-                            confirm.setPositiveButton(R.string.text_delete, (d, w) -> {
+                            confirm.setPositiveButton(R.string.text_delete, (d, w) -> new Thread(() -> {
+                                if (!library.getOffline()) {
+                                    ServerController serverController = ServerController.getInstance(context.getApplicationContext());
+                                    String error = serverController.deleteLibrary(library.getLid());
+                                    if (error != null) {
+                                        context.runOnUiThread(() -> Toast.makeText(context, error, Toast.LENGTH_SHORT).show());
+                                        return;
+                                    }
+                                }
                                 PicmanStorage.getInstance(context).getDaoSession().getPictureLibraryDao().deleteByKey(library.getAppInternalLid());
                                 Iterator<PictureLibrary> itr = infoList.iterator();
                                 while (itr.hasNext()) {
@@ -140,8 +149,8 @@ public class PiclibManagerAdapter extends BaseAdapter {
                                         itr.remove();
                                     }
                                 }
-                                PiclibManagerAdapter.this.notifyDataSetChanged();
-                            });
+                                context.runOnUiThread(PiclibManagerAdapter.this::notifyDataSetChanged);
+                            }).start());
                             alertDialog.dismiss();
                             confirm.show();
                         }

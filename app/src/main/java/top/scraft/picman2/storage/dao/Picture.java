@@ -8,7 +8,9 @@ import org.greenrobot.greendao.annotation.JoinEntity;
 import org.greenrobot.greendao.annotation.NotNull;
 import org.greenrobot.greendao.annotation.ToMany;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import top.scraft.picman2.storage.dao.gen.DaoSession;
 import top.scraft.picman2.storage.dao.gen.PictureDao;
@@ -107,6 +109,14 @@ public class Picture {
     }
     public void setLastModify(Long lastModify) {
         this.lastModify = lastModify;
+    }
+    public Set<String> getTagsAsStringSet() {
+        Set<String> ret = new HashSet<>();
+        List<PictureTag> tagList = getTags();
+        for (PictureTag tag : tagList) {
+            ret.add(tag.getTag());
+        }
+        return ret;
     }
     /**
      * To-many relationship, resolved on first access (and after reset).

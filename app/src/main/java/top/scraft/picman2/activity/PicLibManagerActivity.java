@@ -28,6 +28,7 @@ public class PicLibManagerActivity extends AppCompatActivity {
     private final ArrayList<PictureLibrary> piclibs = new ArrayList<>();
 
     private PicmanStorage picmanStorage;
+    private PiclibManagerAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +39,7 @@ public class PicLibManagerActivity extends AppCompatActivity {
 
         picmanStorage = PicmanStorage.getInstance(getApplicationContext());
 
-        PiclibManagerAdapter adapter = new PiclibManagerAdapter(this, piclibs);
+        adapter = new PiclibManagerAdapter(this, piclibs);
 
         ListView listView = findViewById(R.id.list_piclib);
         listView.setAdapter(adapter);
@@ -56,6 +57,11 @@ public class PicLibManagerActivity extends AppCompatActivity {
             dialog.show();
         });
 
+        updateData();
+    }
+
+    public void updateData() {
+        piclibs.clear();
         piclibs.addAll(picmanStorage.getDaoSession().getPictureLibraryDao().queryBuilder().list());
         adapter.notifyDataSetChanged();
     }

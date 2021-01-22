@@ -32,6 +32,8 @@ import java.util.Set;
 import top.scraft.picman2.R;
 import top.scraft.picman2.activity.adapter.PiclibSpinnerAdapter;
 import top.scraft.picman2.server.ServerController;
+import top.scraft.picman2.server.data.PictureDetail;
+import top.scraft.picman2.server.data.Result;
 import top.scraft.picman2.storage.PicmanStorage;
 import top.scraft.picman2.storage.PictureStorageController;
 import top.scraft.picman2.storage.dao.PiclibPictureMap;
@@ -141,15 +143,16 @@ public class PictureEditorActivity extends AppCompatActivity {
             if (!library.getOffline()) {
                 // online
                 ServerController serverController = ServerController.getInstance(getApplicationContext());
-                Boolean needUpload = serverController.updatePictureMeta(library.getLid(), pid, description, tagList);
-                if (needUpload == null) {
-                    Utils.toastThread(this, "服务器请求失败");
+                Result<PictureDetail> updateResult = serverController.updatePictureMeta(library.getLid(), pid, description, tagList);
+                if (updateResult.getCode() != 200) {
+                    Utils.toastThread(this, updateResult.getMessage());
                     return;
                 }
-                if (needUpload) {
-                    if (!serverController.uploadPicture(library.getLid(), pid, imageFile)) {
-                        Utils.toastThread(this, "上传图片失败");
-                        return;
+                assert updateResult.getData() != null;
+                if (!updateResult.getData().isValid()) {
+                    Result<Object> uploadResult = serverController.uploadPicture(library.getLid(), pid, imageFile);
+                    if (uploadResult.getCode() != 200) {
+                        Utils.toastThread(this, "上传图片失败: " + uploadResult.getMessage());
                     }
                 }
             }

@@ -15,7 +15,7 @@ import top.scraft.picman2.activity.BrowserActivity;
 
 public class LoginWebClient extends PicmanWebClient {
 
-    private final Pattern patternPmst = Pattern.compile("PMST=([0-9A-Fa-f]{32});");
+    private final Pattern patternPmst = Pattern.compile("PMST=([a-zA-Z0-9/+]+={0,2})");
 
     public LoginWebClient(BrowserActivity activity) {
         super(activity);

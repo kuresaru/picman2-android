@@ -26,7 +26,7 @@ public class LoginWebClient extends PicmanWebClient {
         String cookie = CookieManager.getInstance().getCookie(url);
         if (cookie != null) {
 //            Log.d("picman_webview_login", "cookie: " + cookie);
-            if (url.matches("^https?://([^/]+)/#/$")) {
+            if (url.contains("?login_finish")) {
                 Matcher pmst = patternPmst.matcher(cookie);
                 Intent result = new Intent();
                 if (pmst.find()) {

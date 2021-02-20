@@ -43,7 +43,7 @@ import top.scraft.picman2.utils.Utils;
 
 public class ServerController {
   
-  public static final int API_VERSION = 1;
+  public static final int API_VERSION = 2;
   private static ServerController instance = null;
   
   private final Gson gson = new Gson();

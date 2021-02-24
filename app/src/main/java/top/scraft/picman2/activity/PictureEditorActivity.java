@@ -23,7 +23,8 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputLayout;
 
-import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -44,7 +45,6 @@ import top.scraft.picman2.storage.dao.gen.DaoSession;
 import top.scraft.picman2.storage.dao.gen.PiclibPictureMapDao;
 import top.scraft.picman2.storage.dao.gen.PictureDao;
 import top.scraft.picman2.storage.dao.gen.PictureTagDao;
-import top.scraft.picman2.utils.FileUtils;
 import top.scraft.picman2.utils.Utils;
 
 public class PictureEditorActivity extends AppCompatActivity {
@@ -57,7 +57,8 @@ public class PictureEditorActivity extends AppCompatActivity {
     private ImageView imagePreview;
 
     private LayoutInflater layoutInflater;
-    private File imageFile = null;
+    private Uri pictureUri = null;
+    private byte[] pictureFile;
     private String pid = null;
     private final Set<String> tagList = new HashSet<>();
 
@@ -150,7 +151,7 @@ public class PictureEditorActivity extends AppCompatActivity {
                 }
                 assert updateResult.getData() != null;
                 if (!updateResult.getData().isValid()) {
-                    Result<Object> uploadResult = serverController.uploadPicture(library.getLid(), pid, imageFile);
+                    Result<Object> uploadResult = serverController.uploadPicture(library.getLid(), pid, pictureFile);
                     if (uploadResult.getCode() != 200) {
                         Utils.toastThread(this, "上传图片失败: " + uploadResult.getMessage());
                     }
@@ -162,8 +163,8 @@ public class PictureEditorActivity extends AppCompatActivity {
                 oldRecord = new Picture();
                 oldRecord.setPid(pid);
                 oldRecord.setCreateTime(System.currentTimeMillis() / 1000);
-                oldRecord.setFileSize(imageFile.length());
-                Bitmap bmp = BitmapFactory.decodeFile(imageFile.getAbsolutePath()); // TODO gif
+                oldRecord.setFileSize((long) pictureFile.length);
+                Bitmap bmp = BitmapFactory.decodeByteArray(pictureFile, 0, pictureFile.length); // TODO gif
                 oldRecord.setWidth(bmp.getWidth());
                 oldRecord.setHeight(bmp.getHeight());
             }
@@ -190,10 +191,13 @@ public class PictureEditorActivity extends AppCompatActivity {
             // 保存图片文件
             PictureStorageController storage = picmanStorage.getPictureStorage();
             if (!storage.getPicturePath(pid).exists()) {
-                if (storage.savePicture(imageFile, pid)) {
+                try {
+                    InputStream inputStream = getContentResolver().openInputStream(pictureUri);
+                    storage.savePicture(inputStream, pid);
+                    inputStream.close();
                     Utils.toastThread(this, "图片已保存");
-                } else {
-                    Utils.toastThread(this, "保存失败, 请检查存储权限和存储空间");
+                } catch (IOException e) {
+                    Utils.toastThread(this, "保存失败, 请检查存储权限和存储空间 " + e.getLocalizedMessage());
                     oldRecord.update();
                 }
             } else {
@@ -208,31 +212,44 @@ public class PictureEditorActivity extends AppCompatActivity {
         if (intent != null) {
             Bundle extras = intent.getExtras();
             if (extras != null) {
-                String file = extras.getString("file");
-                imageFile = new File(file);
-                if (imageFile.exists() && imageFile.isFile()) {
-                    imagePreview.setImageURI(Uri.fromFile(imageFile));
-                    // 计算pid 加载记录
-                    new Thread(() -> {
-                        String md5 = FileUtils.fileMD5(imageFile);
-                        if (md5 != null) {
-                            String path = imageFile.getAbsolutePath();
-                            pid = md5 + path.substring(path.lastIndexOf('.'));
-                            PictureDao dao = PicmanStorage.getInstance(getApplicationContext()).getDaoSession().getPictureDao();
-                            Picture oldRecord = dao.queryBuilder().where(PictureDao.Properties.Pid.eq(pid)).unique();
-                            runOnUiThread(() -> {
-                                pidEdit.setText(pid);
-                                if (oldRecord != null) {
-                                    descriptionEditor.getEditText().setText(oldRecord.getDescription());
-                                    for (PictureTag tag : oldRecord.getTags()) {
-                                        addTag(tag.getTag());
-                                    }
-                                }
-                            });
+                String uriString = extras.getString("picture_uri");
+                pictureUri = Uri.parse(uriString);
+                imagePreview.setImageURI(pictureUri);
+                pid = null;
+                // 计算pid 加载记录
+                new Thread(() -> {
+                    try {
+                        pictureFile = Utils.readContent(getContentResolver(), pictureUri);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Utils.toastThread(PictureEditorActivity.this, "加载图片失败 " + e.getLocalizedMessage());
+                        finish();
+                        return;
+                    }
+                    String md5 = Utils.md5(pictureFile);
+                    String fileExtName = Utils.contentToFilePath(getContentResolver(), pictureUri);
+                    if (fileExtName != null) {
+                        fileExtName = fileExtName.substring(fileExtName.lastIndexOf('.'));
+                        pid = md5 + fileExtName;
+                    }
+                    if (pid == null) {
+                        Utils.toastThread(PictureEditorActivity.this, "计算pid失败/分享无效");
+                        finish();
+                        return;
+                    }
+                    PictureDao dao = PicmanStorage.getInstance(getApplicationContext()).getDaoSession().getPictureDao();
+                    Picture oldRecord = dao.queryBuilder().where(PictureDao.Properties.Pid.eq(pid)).unique();
+                    runOnUiThread(() -> {
+                        pidEdit.setText(pid);
+                        if (oldRecord != null) {
+                            descriptionEditor.getEditText().setText(oldRecord.getDescription());
+                            for (PictureTag tag : oldRecord.getTags()) {
+                                addTag(tag.getTag());
+                            }
                         }
-                    }).start();
-                    return;
-                }
+                    });
+                }).start();
+                return;
             }
         }
         Toast.makeText(this, "参数错误", Toast.LENGTH_SHORT).show();

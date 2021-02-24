@@ -18,6 +18,9 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.tabs.TabLayout;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,6 +45,7 @@ import top.scraft.picman2.storage.dao.PictureLibrary;
 import top.scraft.picman2.storage.dao.gen.PiclibPictureMapDao;
 import top.scraft.picman2.storage.dao.gen.PictureDao;
 import top.scraft.picman2.storage.dao.gen.PictureLibraryDao;
+import top.scraft.picman2.utils.Utils;
 
 @RequiredArgsConstructor
 public class PiclibManagerAdapter extends BaseAdapter {
@@ -264,11 +268,22 @@ public class PiclibManagerAdapter extends BaseAdapter {
                             continue;
                           }
                           if (needUpload) {
-                            Result<Object> uploadResult = serverController.uploadPicture(newLib.getLid(), picture.getPid(),
-                                storageController.getPicturePath(picture.getPid()));
-                            if (uploadResult.getCode() != 200) {
-                              context.runOnUiThread(() -> Toast.makeText(context, "上传失败: " +
-                                  uploadResult.getMessage(), Toast.LENGTH_SHORT).show());
+                            byte[] bytes = null;
+                            try {
+                              File file = storageController.getPicturePath(picture.getPid());
+                              FileInputStream fileInputStream = new FileInputStream(file);
+                              bytes = Utils.readStream(fileInputStream);
+                              fileInputStream.close();
+                            } catch (IOException e) {
+                              e.printStackTrace();
+                              context.runOnUiThread(() -> Toast.makeText(context, "读取文件失败 " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show());
+                            }
+                            if (bytes != null) {
+                              Result<Object> uploadResult = serverController.uploadPicture(newLib.getLid(), picture.getPid(), bytes);
+                              if (uploadResult.getCode() != 200) {
+                                context.runOnUiThread(() -> Toast.makeText(context, "上传失败: " +
+                                    uploadResult.getMessage(), Toast.LENGTH_SHORT).show());
+                              }
                             }
                           }
                           // 上传完成 保存到本地

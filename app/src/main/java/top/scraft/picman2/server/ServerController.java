@@ -312,17 +312,12 @@ public class ServerController {
   
   /**
    * 上传图片文件
-   *
-   * @param lid
-   * @param pid
-   * @param picture
-   * @return
    */
   @NonNull
   @EverythingIsNonNull
-  public Result<Object> uploadPicture(long lid, String pid, File picture) {
+  public Result<Object> uploadPicture(long lid, String pid, byte[] bytes) {
     String path = String.format(Locale.ENGLISH, "/api/lib/%d/gallery/%s/img", lid, pid);
-    RequestBody file = RequestBody.create(Utils.mediaType(pid), picture);
+    RequestBody file = RequestBody.create(Utils.mediaType(pid), bytes);
     RequestBody requestBody = new MultipartBody.Builder()
         .setType(MultipartBody.FORM)
         .addFormDataPart("file", pid, file)

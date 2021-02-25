@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 import top.scraft.picman2.utils.FileUtils;
 
@@ -80,17 +81,9 @@ public class PictureStorageController {
      *
      * @param src 源图片
      * @param pid 图片id
-     * @return 是否保存成功
      */
-    public boolean savePicture(@NonNull File src, @NonNull String pid) {
-        File dst = getPicturePath(pid);
-        try {
-            FileUtils.copyFile(src, dst);
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
+    public void savePicture(@NonNull InputStream src, @NonNull String pid) throws IOException {
+        FileUtils.saveFileFromStream(src, getPicturePath(pid));
     }
 
     /**

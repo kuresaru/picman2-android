@@ -1,13 +1,10 @@
 package top.scraft.picman2.activity;
 
 import android.Manifest;
-import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -55,7 +52,7 @@ public class ArrangeActivity extends AppCompatActivity {
         Intent intent = getIntent();
         if (intent != null) {
             String action = intent.getAction();
-            ArrayList<Uri> uriList = null;
+            ArrayList<Uri> uriList;
             if (Intent.ACTION_SEND.equals(action)) {
                 uriList = new ArrayList<>();
                 uriList.add(intent.getParcelableExtra(Intent.EXTRA_STREAM));
@@ -64,29 +61,10 @@ public class ArrangeActivity extends AppCompatActivity {
             } else {
                 return false;
             }
-            ArrayList<String> pathList = new ArrayList<>();
-            for (Uri uri : uriList) {
-                String scheme = uri.getScheme();
-                if (scheme != null) {
-                    if (ContentResolver.SCHEME_FILE.equals(scheme)) {
-                        pathList.add(uri.getPath());
-                    } else if (ContentResolver.SCHEME_CONTENT.equals(scheme)) {
-                        Cursor cursor = getContentResolver().query(uri, new String[]{
-                                MediaStore.Images.ImageColumns.DATA
-                        }, null, null, null);
-                        if (cursor != null) {
-                            if (cursor.moveToFirst()) {
-                                int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-                                if (idx > -1) {
-                                    pathList.add(cursor.getString(idx));
-                                }
-                            }
-                            cursor.close();
-                        }
-                    }
-                }
+            if (uriList == null) {
+                return false;
             }
-            adapter.getPicturePathList().addAll(pathList);
+            adapter.getPictureUriList().addAll(uriList);
             adapter.notifyDataSetChanged();
             // TODO 是不是可以直接用编辑活动接收分享
 //            if (pathList.size() == 1) {
@@ -96,7 +74,7 @@ public class ArrangeActivity extends AppCompatActivity {
 //                editIntent.putExtra("file", pathList.get(0));
 //                startActivity(editIntent);
 //            }
-            return pathList.size() > 0;
+            return uriList.size() > 0;
         } else {
             return false;
         }

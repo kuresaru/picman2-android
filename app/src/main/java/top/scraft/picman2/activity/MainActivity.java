@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -50,12 +51,12 @@ import top.scraft.picman2.storage.dao.gen.PictureDao;
 import top.scraft.picman2.storage.dao.gen.PictureLibraryDao;
 import top.scraft.picman2.storage.dao.gen.PictureTagDao;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements TextWatcher {
   
   public static final int ACTIVITY_RESULT_LOGIN = 100;
   
   private SearchAdapter searchAdapter;
-  private List<Picture> searchResults = new ArrayList<>();
+  private final List<Picture> searchResults = new ArrayList<>();
   
   private MenuItem syncMenuItem;
   private MenuItem systemMenuItem;
@@ -76,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     setSupportActionBar(toolbar);
     // find views
     inputSearch = findViewById(R.id.inputSearch);
-    findViewById(R.id.buttonSearch).setOnClickListener(this);
+    inputSearch.addTextChangedListener(this);
     RecyclerView recyclerView = findViewById(R.id.main_gallery);
     // get controllers
     serverController = ServerController.getInstance(getApplicationContext());
@@ -256,36 +257,45 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
   }
   
   @Override
-  public void onClick(View v) {
-    if (v.getId() == R.id.buttonSearch) {
-      Editable searchText = inputSearch.getText();
-      if (searchText != null) {
-        String keyword = searchText.toString();
-        if (keyword.isEmpty()) {
-          Toast.makeText(this, "搜索关键字不能为空", Toast.LENGTH_SHORT).show();
+  public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+  }
+  
+  @Override
+  public void onTextChanged(CharSequence s, int start, int before, int count) {
+  }
+  
+  @Override
+  public void afterTextChanged(Editable s) {
+    Editable searchText = inputSearch.getText();
+    if (searchText != null) {
+      String keyword = searchText.toString();
+      if (keyword.isEmpty()) {
+        searchResults.clear();
+        searchAdapter.notifyDataSetChanged();
+      } else {
+        DaoSession daoSession = PicmanStorage.getInstance(getApplicationContext()).getDaoSession();
+        PictureDao pDao = daoSession.getPictureDao();
+        PictureTagDao tDao = daoSession.getPictureTagDao();
+        String likePattern = "%" + searchText.toString() + "%";
+        searchResults.clear();
+        searchResults.addAll(pDao.queryBuilder().where(PictureDao.Properties.Description.like(likePattern)).list()); // FIXME 遇到描述有%的怎么办?
+        // 找到所有Tag匹配的ipid
+        Set<Long> tagMatchedInternalPids = new HashSet<>();
+        for (PictureTag pictureTag : tDao.queryBuilder().where(PictureTagDao.Properties.Tag.like(likePattern)).list()) {
+          tagMatchedInternalPids.add(pictureTag.getAppInternalPid());
+        }
+        // 去掉重复的ipid
+        for (Picture picture : searchResults) {
+          tagMatchedInternalPids.remove(picture.getAppInternalPid());
+        }
+        // 加入结果
+        searchResults.addAll(pDao.queryBuilder().where(PictureDao.Properties.AppInternalPid.in(tagMatchedInternalPids)).list());
+      
+        searchAdapter.notifyDataSetChanged();
+        if (searchResults.size() == 0) {
+          inputSearch.setError("搜索结果为空");
         } else {
-          DaoSession daoSession = PicmanStorage.getInstance(getApplicationContext()).getDaoSession();
-          PictureDao pDao = daoSession.getPictureDao();
-          PictureTagDao tDao = daoSession.getPictureTagDao();
-          String likePattern = "%" + searchText.toString() + "%";
-          searchResults.clear();
-          searchResults.addAll(pDao.queryBuilder().where(PictureDao.Properties.Description.like(likePattern)).list()); // FIXME 遇到描述有%的怎么办?
-          // 找到所有Tag匹配的ipid
-          Set<Long> tagMatchedInternalPids = new HashSet<>();
-          for (PictureTag pictureTag : tDao.queryBuilder().where(PictureTagDao.Properties.Tag.like(likePattern)).list()) {
-            tagMatchedInternalPids.add(pictureTag.getAppInternalPid());
-          }
-          // 去掉重复的ipid
-          for (Picture picture : searchResults) {
-            tagMatchedInternalPids.remove(picture.getAppInternalPid());
-          }
-          // 加入结果
-          searchResults.addAll(pDao.queryBuilder().where(PictureDao.Properties.AppInternalPid.in(tagMatchedInternalPids)).list());
-          
-          searchAdapter.notifyDataSetChanged();
-          if (searchResults.size() == 0) {
-            Toast.makeText(this, "搜索结果为空", Toast.LENGTH_SHORT).show();
-          }
+          inputSearch.setError(null);
         }
       }
     }

@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import top.scraft.picman2.R;
@@ -210,50 +211,55 @@ public class PictureEditorActivity extends AppCompatActivity {
     private void loadImage() {
         Intent intent = getIntent();
         if (intent != null) {
+            String action = intent.getAction();
             Bundle extras = intent.getExtras();
-            if (extras != null) {
+            if (Intent.ACTION_SEND.equals(action)) {
+                pictureUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+            } else if (extras != null) {
                 String uriString = extras.getString("picture_uri");
                 pictureUri = Uri.parse(uriString);
-                imagePreview.setImageURI(pictureUri);
-                pid = null;
-                // 计算pid 加载记录
-                new Thread(() -> {
-                    try {
-                        pictureFile = Utils.readContent(getContentResolver(), pictureUri);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        Utils.toastThread(PictureEditorActivity.this, "加载图片失败 " + e.getLocalizedMessage());
-                        finish();
-                        return;
-                    }
-                    String md5 = Utils.md5(pictureFile);
-                    String fileExtName = Utils.contentToFilePath(getContentResolver(), pictureUri);
-                    if (fileExtName != null) {
-                        fileExtName = fileExtName.substring(fileExtName.lastIndexOf('.'));
-                        pid = md5 + fileExtName;
-                    }
-                    if (pid == null) {
-                        Utils.toastThread(PictureEditorActivity.this, "计算pid失败/分享无效");
-                        finish();
-                        return;
-                    }
-                    PictureDao dao = PicmanStorage.getInstance(getApplicationContext()).getDaoSession().getPictureDao();
-                    Picture oldRecord = dao.queryBuilder().where(PictureDao.Properties.Pid.eq(pid)).unique();
-                    runOnUiThread(() -> {
-                        pidEdit.setText(pid);
-                        if (oldRecord != null) {
-                            descriptionEditor.getEditText().setText(oldRecord.getDescription());
-                            for (PictureTag tag : oldRecord.getTags()) {
-                                addTag(tag.getTag());
-                            }
-                        }
-                    });
-                }).start();
-                return;
             }
         }
-        Toast.makeText(this, "参数错误", Toast.LENGTH_SHORT).show();
-        finish();
+        if (pictureUri != null) {
+            imagePreview.setImageURI(pictureUri);
+            pid = null;
+            // 计算pid 加载记录
+            new Thread(() -> {
+                try {
+                    pictureFile = Utils.readContent(getContentResolver(), pictureUri);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Utils.toastThread(PictureEditorActivity.this, "加载图片失败 " + e.getLocalizedMessage());
+                    finish();
+                    return;
+                }
+                String md5 = Utils.md5(pictureFile);
+                String fileExtName = Utils.contentToFilePath(getContentResolver(), pictureUri);
+                if (fileExtName != null) {
+                    fileExtName = fileExtName.substring(fileExtName.lastIndexOf('.'));
+                    pid = md5 + fileExtName;
+                }
+                if (pid == null) {
+                    Utils.toastThread(PictureEditorActivity.this, "计算pid失败/分享无效");
+                    finish();
+                    return;
+                }
+                PictureDao dao = PicmanStorage.getInstance(getApplicationContext()).getDaoSession().getPictureDao();
+                Picture oldRecord = dao.queryBuilder().where(PictureDao.Properties.Pid.eq(pid)).unique();
+                runOnUiThread(() -> {
+                    pidEdit.setText(pid);
+                    if (oldRecord != null) {
+                        Objects.requireNonNull(descriptionEditor.getEditText()).setText(oldRecord.getDescription());
+                        for (PictureTag tag : oldRecord.getTags()) {
+                            addTag(tag.getTag());
+                        }
+                    }
+                });
+            }).start();
+        } else {
+            Toast.makeText(this, "参数错误", Toast.LENGTH_SHORT).show();
+            finish();
+        }
     }
 
     private void addTag(String tag) {

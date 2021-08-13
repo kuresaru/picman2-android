@@ -52,32 +52,16 @@ public class ArrangeActivity extends AppCompatActivity {
         Intent intent = getIntent();
         if (intent != null) {
             String action = intent.getAction();
-            ArrayList<Uri> uriList;
-            if (Intent.ACTION_SEND.equals(action)) {
-                uriList = new ArrayList<>();
-                uriList.add(intent.getParcelableExtra(Intent.EXTRA_STREAM));
-            } else if (Intent.ACTION_SEND_MULTIPLE.equals(action)) {
-                uriList = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
-            } else {
-                return false;
+            if (Intent.ACTION_SEND_MULTIPLE.equals(action)) {
+                ArrayList<Uri> uriList = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+                if (uriList != null) {
+                    adapter.getPictureUriList().addAll(uriList);
+                    adapter.notifyDataSetChanged();
+                    return uriList.size() > 0;
+                }
             }
-            if (uriList == null) {
-                return false;
-            }
-            adapter.getPictureUriList().addAll(uriList);
-            adapter.notifyDataSetChanged();
-            // TODO 是不是可以直接用编辑活动接收分享
-//            if (pathList.size() == 1) {
-//                // 只有一张图片时候直接打开编辑界面
-//                Intent editIntent = new Intent();
-//                editIntent.setClass(this, PictureEditorActivity.class);
-//                editIntent.putExtra("file", pathList.get(0));
-//                startActivity(editIntent);
-//            }
-            return uriList.size() > 0;
-        } else {
-            return false;
         }
+        return false;
     }
 
     @Override

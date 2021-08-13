@@ -24,12 +24,20 @@
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".activity.PictureEditorActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/AppTheme.NoActionBar"
+            android:label="@string/app_addpic">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".activity.ArrangeActivity"
             android:label="@string/app_addpic">
             <intent-filter>
-                <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -55,7 +63,7 @@
             </intent-filter>
         </activity>
         <provider
-            android:authorities="top.scraft.picman2.fileProvider"
+            android:authorities="${applicationId}.fileProvider"
             android:name="androidx.core.content.FileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
